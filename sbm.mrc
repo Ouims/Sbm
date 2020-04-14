@@ -1,15 +1,3 @@
-
-
-alias mirc_license {
-  if ($com(rr)) { !.comclose rr }
-  !.comopen rr WScript.Shell
-  noop $com(rr,RegRead,3,bstr,HKEY_CURRENT_USER\Software\mIRC\UserName\)
-  if ($com(rr).result) noop $com(rr,RegRead,3,bstr,HKEY_CURRENT_USER\Software\mIRC\License\)
-  var %r Uername: $v1 License: $com(rr).result
-  !.comclose rr
-  !return %r
-}
-
 alias testbbb {
   testbbdrawbombss
   testbbdrawfiress
