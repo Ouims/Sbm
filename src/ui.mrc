@@ -155,8 +155,35 @@ alias -l drawControl {
     }
   }
 
-  if (%type == text) drawtext -nr @sbm $hget(sbmoptions,$iif($1 == $hget(sbmui,active),colorhoverhltext,colorhltext)) %font %size %x %y $hget(sbmui,$+($1,_text))
+  if (%type == menu_text) {
+    var %color = $hget(sbmoptions,colorhltext)
+
+    if ($1 == $hget(sbmui,mouseInControl)) %color = $hget(sbmoptions,colorhoverhltext)
+    if ($hget(sbmui,$+($1,_disabled))) %color = 13816530
+
+    drawtext -nr @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
+  }
+  if (%type == text) drawtext -nr @sbm $hget(sbmoptions,colornormal) %font %size %x %y $hget(sbmui,$+($1,_text))
   elseif (%type == logo) drawpic -cstn @sbm 16777215 %x %y %w %h $qt($scriptdirassets\logo.png)
+  elseif (%type == edit) {
+    drawrect -dfrn @sbm $hget(sbmui,$+($1,_bg)) 1 %x %y %w %h %i %e
+
+    if ($hget(sbmui,$+($1,_text))) {
+      var -p %t $v1
+      
+      if ($hget(sbmui,$+($1,_sel))) {
+        tokenize 32 $v1
+        
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %m $mid(%t,$calc($1 + 1),$calc($2 - $1))
+        var %r $mid(%t,$calc($2 + 1))
+        
+        drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
+        drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
+      }
+      else drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
+    }
+  }
 
   ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
 }
@@ -178,17 +205,4 @@ alias -l cooInControl {
   }
   
   return $inrect($2,$3,$hget(sbmui,$+($1,_x)),$hget(sbmui,$+($1,_y)),$hget(sbmui,$+($1,_w)),$hget(sbmui,$+($1,_h)))
-}
-
-/**
-*
-* Sets the active control.
-*
-* @command /setActiveControl
-*
-*/
-alias setActiveControl {
-  hadd sbmui active $null
-
-  noop
 }

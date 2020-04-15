@@ -6,12 +6,49 @@ on *:close:@sbm: {
 
 menu @sbm {
   mouse: {
-    hadd sbmui active $null
+    hadd sbmui mouseInControl $null
 
-    noop $hfind(sbmui,*_type,0,w,hadd sbmui active $iif($cooInControl($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,active)))
+    noop $hfind(sbmui,*_type,0,w,hadd sbmui mouseInControl $iif($cooInControl($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,mouseInControl)))
   }
+  leave: hadd sbmui mouseInControl $null
   sclick: {
-    if ($hget(sbmui,active)) echo -a sclicked $v1
+    if ($hget(sbmui,mouseInControl)) {
+      var %active = $v1
+      var %view = $hget(sbm,view)
+
+      if ($hget(sbmui,$+(%active,_type)) == edit) {
+        hadd sbmui focus %active
+        hadd sbmui drawcursor $true
+        hdel sbmui $+(%active,_sel)
+
+        if ($hget(sbmui,$+(%active,_text)) != $null) {
+          var -p %t = $v1
+          var %x = $hget(sbmui,$+(%active,_x))
+
+          if ($mouse.x <= $calc(%x + 10)) hadd sbmui $+(%active,_cursor) 0
+          elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_size))))) hadd sbmui $+(%active,_cursor) $len(%t)
+          else {
+            var %a 1
+            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_size)))) <= $mouse.x) {
+              inc %a
+            }
+
+            hadd sbmui $+(%active,_cursor) $calc(%a - 1)
+          }
+        }
+      }
+
+      if (%view == menu) {
+        if (%active == connect) view connect
+        elseif (%active == create) view create
+      }
+      elseif (%view == connect) {
+        if (%active == back) view menu
+      }
+      elseif (%view == create) {
+        if (%active == back) view menu
+      }
+    }
   }
 }
 
@@ -39,6 +76,21 @@ alias -l loop {
 
   hadd sbmui resize $false
 
+  var %focus = $hget(sbmui,focus)
+
+  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+    if ($calc($ticks - $hget(sbmui,cursorticks)) > 500) {
+      if ($hget(sbmui,drawcursor)) hadd sbmui drawcursor $false
+      else hadd sbmui drawcursor $true
+
+      hadd sbmui cursorticks $ticks
+    }
+    if ($hget(sbmui,drawcursor)) {
+      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))),0)
+      drawline -rn @sbm 0 1 $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 6) $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 21)
+    }
+  }
+
   drawdot @sbm
 
   .timersbm -ho 1 0 if (!$isalias(loop)) .timersbm -cho 1 0 $!timer(sbm).com $(|) else loop
@@ -56,7 +108,35 @@ alias -l loop {
 alias sbm {
   if ($window(@sbm)) window -a sbm
   else {
-    loadOptions
+    if ($exists($scriptdirsbm.sbm)) hload -m sbmoptions $qt($scriptdirsbm.sbm)
+    else .hmake sbmoptions
+
+    if ($hget(sbmoptions,keyleft) !isnum) hadd sbmoptions keyleft 37
+    if ($hget(sbmoptions,keyright) !isnum 1-) hadd sbmoptions keyright 39
+    if ($hget(sbmoptions,keyup) !isnum 1-) hadd sbmoptions keyup 38
+    if ($hget(sbmoptions,keydown) !isnum 1-) hadd sbmoptions keydown 40
+    if ($hget(sbmoptions,keybomb) !isnum 1-) hadd sbmoptions keybomb 32
+
+    if ($hget(sbmoptions,colornormal) !isnum 0-16777215) hadd sbmoptions colornormal 0
+    if ($hget(sbmoptions,colorhovernormal) !isnum 0-16777215) hadd sbmoptions colorhovernormal 32764
+    if ($hget(sbmoptions,colorhltext) !isnum 0-16777215) hadd sbmoptions colorhltext 32764
+    if ($hget(sbmoptions,colorhoverhltext) !isnum 0-16777215) hadd sbmoptions colorhoverhltext 23737
+    if ($hget(sbmoptions,colorcancel) !isnum 0-16777215) hadd sbmoptions colorcancel 255
+    if ($hget(sbmoptions,colorhovercancel) !isnum 0-16777215) hadd sbmoptions colorhovercancel 127
+    if ($hget(sbmoptions,colormainbg) !isnum 0-16777215) hadd sbmoptions colormainbg 3168272
+    if ($hget(sbmoptions,coloreditbg) !isnum 0-16777215) hadd sbmoptions coloreditbg 8355711
+    if ($hget(sbmoptions,coloredittext) !isnum 0-16777215) hadd sbmoptions coloredittext 0
+    if ($hget(sbmoptions,coloreditseltext) !isnum 0-16777215) hadd sbmoptions coloreditseltext 16777215
+    if ($hget(sbmoptions,coloreditselbg) !isnum 0-16777215) hadd sbmoptions coloreditselbg 16515072
+    if ($hget(sbmoptions,colorchatinfos) !isnum 0-16777215) hadd sbmoptions colorchatinfos 127
+    if ($hget(sbmoptions,colorconnectingmsg) !isnum 0-16777215) hadd sbmoptions colorconnectingmsg 16776960
+    if ($hget(sbmoptions,colorconnecterrormsg) !isnum 0-16777215) hadd sbmoptions colorconnecterrormsg 255
+    if ($hget(sbmoptions,colorchatmsg) !isnum 0-16777215) hadd sbmoptions colorchatmsg 0
+    if ($hget(sbmoptions,colorelevator) !isnum 0-16777215) hadd sbmoptions colorelevator 0
+    if ($hget(sbmoptions,colorplay) !isnum 0-16777215) hadd sbmoptions colorplay 16515072
+    if ($hget(sbmoptions,colorhoverplay) !isnum 0-16777215) hadd sbmoptions colorhoverplay 64512
+
+    hsave sbmoptions $qt($scriptdirsbm.sbm)
 
     window -pdBfCfo +l @sbm -1 -1 800 600
 
@@ -65,8 +145,6 @@ alias sbm {
     
     hadd sbmui originalWidth 800
     hadd sbmui originalHeight 600
-    hadd sbmui currentWidth 800
-    hadd sbmui currentHeight 600
 
     view menu
 
@@ -76,43 +154,92 @@ alias sbm {
 
 /**
 *
-* Loads available options. If options are missing it creates them.
+* Tokenizes a string based on a delimiter or quotes just as mIRC does for native commands.
 *
-* @command /loadOptions
+* @identifier $getParameters
+*
+* @param <parameters>       String containing your parameters
+* @param [delimiter=\x20]   The delimiter for your parameters
+*
+* @returns  String tokenized into $cr based on a specified delimiter or double quotes.
 *
 */
-alias -l loadOptions {
-  if ($exists($scriptdirsbm.sbm)) hload -m sbmoptions $qt($scriptdirsbm.sbm)
-  else .hmake sbmoptions
+alias -l getParameters {
+  set -l %tokenized $null
+  set -l %token 1
+  set -l %chr $2
 
-  ; input options
-  if ($hget(sbmoptions,keyleft) !isnum) hadd sbmoptions keyleft 37
-  if ($hget(sbmoptions,keyright) !isnum 1-) hadd sbmoptions keyright 39
-  if ($hget(sbmoptions,keyup) !isnum 1-) hadd sbmoptions keyup 38
-  if ($hget(sbmoptions,keydown) !isnum 1-) hadd sbmoptions keydown 40
-  if ($hget(sbmoptions,keybomb) !isnum 1-) hadd sbmoptions keybomb 32
+  if (%chr == $null) set -l %chr \x20
 
-  ; theme options
-  if ($hget(sbmoptions,colornormal) !isnum 0-16777215) hadd sbmoptions colornormal 0
-  if ($hget(sbmoptions,colorhovernormal) !isnum 0-16777215) hadd sbmoptions colorhovernormal 32764
-  if ($hget(sbmoptions,colorhltext) !isnum 0-16777215) hadd sbmoptions colorhltext 32764
-  if ($hget(sbmoptions,colorhoverhltext) !isnum 0-16777215) hadd sbmoptions colorhoverhltext 23737
-  if ($hget(sbmoptions,colorcancel) !isnum 0-16777215) hadd sbmoptions colorcancel 255
-  if ($hget(sbmoptions,colorhovercancel) !isnum 0-16777215) hadd sbmoptions colorhovercancel 127
-  if ($hget(sbmoptions,colormainbg) !isnum 0-16777215) hadd sbmoptions colormainbg 3168272
-  if ($hget(sbmoptions,coloreditbg) !isnum 0-16777215) hadd sbmoptions coloreditbg 8355711
-  if ($hget(sbmoptions,coloredittext) !isnum 0-16777215) hadd sbmoptions coloredittext 0
-  if ($hget(sbmoptions,coloreditseltext) !isnum 0-16777215) hadd sbmoptions coloreditseltext 16777215
-  if ($hget(sbmoptions,coloreditselbg) !isnum 0-16777215) hadd sbmoptions coloreditselbg 16515072
-  if ($hget(sbmoptions,colorchatinfos) !isnum 0-16777215) hadd sbmoptions colorchatinfos 127
-  if ($hget(sbmoptions,colorconnectingmsg) !isnum 0-16777215) hadd sbmoptions colorconnectingmsg 16776960
-  if ($hget(sbmoptions,colorconnecterrormsg) !isnum 0-16777215) hadd sbmoptions colorconnecterrormsg 255
-  if ($hget(sbmoptions,colorchatmsg) !isnum 0-16777215) hadd sbmoptions colorchatmsg 0
-  if ($hget(sbmoptions,colorelevator) !isnum 0-16777215) hadd sbmoptions colorelevator 0
-  if ($hget(sbmoptions,colorplay) !isnum 0-16777215) hadd sbmoptions colorplay 16515072
-  if ($hget(sbmoptions,colorhoverplay) !isnum 0-16777215) hadd sbmoptions colorhoverplay 64512
+  set -l %regex /((?:"(?:[^"])*"|[^ $+ %chr $+ ])+)/g
 
-  hsave sbmoptions $qt($scriptdirsbm.sbm)
+  set -l %tokens $regex(tokens,$1,%regex)
+  set -l %total $regml(tokens,0)
+
+  while (%token <= %total) {
+    set -l %tokenized $+(%tokenized,$cr,$regml(tokens,%token))
+
+    inc %token
+  }
+
+  return %tokenized
+}
+
+/**
+*
+* Compares two numbers.
+*
+* @identifier $max
+*
+* @param <number>  first number to compare
+* @param <number>  second number to compare
+*
+* @returns  the biggest number
+*
+*/
+alias -l max {
+  if ($1 > $2) return $1
+  return $2
+}
+
+/**
+*
+* Compares two numbers.
+*
+* @identifier $min
+*
+* @param <number>  first number to compare
+* @param <number>  second number to compare
+*
+* @returns  the smallest number
+*
+*/
+alias -l min {
+  if ($1 < $2) return $1
+  return $2
+}
+
+/**
+*
+* Align helper.
+*
+* @identifier $align
+*
+* @param <available space>  available space
+* @param <actual space>     space trying to be used
+* @param <position>         current position
+*
+* @prop center              calculates the center position alignment
+* @prop oppositeSide        calculates the opposite side position alignment
+*
+* @returns                  new position based on prop
+*
+*/
+alias -l align {
+  if ($prop == center) && ($calc(($1 - $2) / 2 + $3) > $3) return $v1
+  elseif ($prop == oppositeSide) && ($calc($1 - $2 + $3) > $3) return $v1
+
+  return $3
 }
 
 /**
@@ -272,8 +399,35 @@ alias -l drawControl {
     }
   }
 
-  if (%type == text) drawtext -nr @sbm $hget(sbmoptions,$iif($1 == $hget(sbmui,active),colorhoverhltext,colorhltext)) %font %size %x %y $hget(sbmui,$+($1,_text))
+  if (%type == menu_text) {
+    var %color = $hget(sbmoptions,colorhltext)
+
+    if ($1 == $hget(sbmui,mouseInControl)) %color = $hget(sbmoptions,colorhoverhltext)
+    if ($hget(sbmui,$+($1,_disabled))) %color = 13816530
+
+    drawtext -nr @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
+  }
+  if (%type == text) drawtext -nr @sbm $hget(sbmoptions,colornormal) %font %size %x %y $hget(sbmui,$+($1,_text))
   elseif (%type == logo) drawpic -cstn @sbm 16777215 %x %y %w %h $qt($scriptdirassets\logo.png)
+  elseif (%type == edit) {
+    drawrect -dfrn @sbm $hget(sbmui,$+($1,_bg)) 1 %x %y %w %h %i %e
+
+    if ($hget(sbmui,$+($1,_text))) {
+      var -p %t $v1
+      
+      if ($hget(sbmui,$+($1,_sel))) {
+        tokenize 32 $v1
+        
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %m $mid(%t,$calc($1 + 1),$calc($2 - $1))
+        var %r $mid(%t,$calc($2 + 1))
+        
+        drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
+        drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
+      }
+      else drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
+    }
+  }
 
   ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
 }
@@ -299,19 +453,6 @@ alias -l cooInControl {
 
 /**
 *
-* Sets the active control.
-*
-* @command /setActiveControl
-*
-*/
-alias setActiveControl {
-  hadd sbmui active $null
-
-  noop
-}
-
-/**
-*
 * Sets the view of the game.
 *
 * @command /view
@@ -324,6 +465,11 @@ alias -l view {
   var %wh = $hget(sbmui,originalHeight)
 
   hadd sbm view $1
+
+  hdel -w sbmui *_*
+  hadd sbmui mouseInControl $null
+  hadd sbmui focus $null
+  hadd sbmui drawcursor $false
 
   if ($1 == menu) || ($1 == $null) {
     addControl logo logo 10 20 780 300 null null fixed
@@ -360,95 +506,216 @@ alias -l view {
 
     addControl menu_text options %x %y %w %h %font %size relative %text
   }
-}
+  elseif ($1 == connect) {
+    hadd sbmui focus server
 
-/**
-*
-* Tokenizes a string based on a delimiter or quotes just as mIRC does for native commands.
-*
-* @identifier $getParameters
-*
-* @param <parameters>       String containing your parameters
-* @param [delimiter=\x20]   The delimiter for your parameters
-*
-* @returns  String tokenized into $cr based on a specified delimiter or double quotes.
-*
-*/
-alias -l getParameters {
-  set -l %tokenized $null
-  set -l %token 1
-  set -l %chr $2
+    var %text = $chr(8592) Back
+    var %font = "segoe ui symbol"
+    var %size = 20
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 10
+    var %y = 5
 
-  if (%chr == $null) set -l %chr \x20
+    addControl menu_text back %x %y %w %h %font %size static %text
 
-  set -l %regex /((?:"(?:[^"])*"|[^ $+ %chr $+ ])+)/g
+    var %text = Enter the server information and a nickname
+    var %font = "segoe ui symbol"
+    var %size = 27
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 100
 
-  set -l %tokens $regex(tokens,$1,%regex)
-  set -l %total $regml(tokens,0)
+    addControl text title %x %y %w %h %font %size fixed %text
 
-  while (%token <= %total) {
-    set -l %tokenized $+(%tokenized,$cr,$regml(tokens,%token))
+    var %text = Server Address
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 180
+    var %y = 270
+    var %sx = %x
+    var %sw = %w
 
-    inc %token
+    addControl text server_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 160
+    var %h = 25
+    var %x = 380
+    var %y = 272
+
+    addControl edit server %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui server_bg 8355711
+
+    var %text = Server Port
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 350
+
+    addControl text port_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 80
+    var %h = 25
+    var %x = 380
+    var %y = 352
+
+    addControl edit port %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui port_bg 8355711
+
+    var %text = Nickname
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 430
+
+    addControl text nick_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 90
+    var %h = 25
+    var %x = 380
+    var %y = 432
+
+    addControl edit nick %x %y %w %h %font %size absolute_top_left $me
+
+    hadd sbmui nick_cursor $len($me)
+
+    if ($len($me)) hadd sbmui nick_sel 0 $len($me)
+
+    hadd sbmui nick_bg 8355711
+
+    var %text = Connect
+    var %font = "segoe ui symbol"
+    var %size = 28
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 500
+
+    addControl menu_text connect %x %y %w %h %font %size absolute_top_left %text
+
+    hadd sbmui connect_disabled $true
+  }
+  elseif ($1 == create) {
+    hadd sbmui focus port
+
+    var %text = $chr(8592) Back
+    var %font = "segoe ui symbol"
+    var %size = 20
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 10
+    var %y = 5
+
+    addControl menu_text back %x %y %w %h %font %size static %text
+
+    var %text = Enter the server port and a nickname
+    var %font = "segoe ui symbol"
+    var %size = 27
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 100
+
+    addControl text title %x %y %w %h %font %size fixed %text
+
+    var %text = Server Address
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 180
+    var %y = 270
+    var %sx = %x
+    var %sw = %w
+
+    ;addControl text server_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 160
+    var %h = 25
+    var %x = 380
+    var %y = 272
+
+    ;addControl edit server %x %y %w %h %font %size absolute_top_left
+
+    var %text = Server Port
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 350
+
+    addControl text port_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 80
+    var %h = 25
+    var %x = 380
+    var %y = 352
+
+    addControl edit port %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui port_bg 8355711
+
+    var %text = Nickname
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 430
+
+    addControl text nick_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 90
+    var %h = 25
+    var %x = 380
+    var %y = 432
+
+    addControl edit nick %x %y %w %h %font %size absolute_top_left $me
+
+    hadd sbmui nick_cursor $len($me)
+
+    if ($len($me)) hadd sbmui nick_sel 0 $len($me)
+
+    hadd sbmui nick_bg 8355711
+
+    var %text = Start
+    var %font = "segoe ui symbol"
+    var %size = 28
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 500
+
+    addControl menu_text connect %x %y %w %h %font %size absolute_top_left %text
+    
+  }
+  elseif ($1 == options) {
+
   }
 
-  return %tokenized
-}
-
-/**
-*
-* Compares two numbers.
-*
-* @identifier $max
-*
-* @param <number>  first number to compare
-* @param <number>  second number to compare
-*
-* @returns  the biggest number
-*
-*/
-alias -l max {
-  if ($1 > $2) return $1
-  return $2
-}
-
-/**
-*
-* Compares two numbers.
-*
-* @identifier $min
-*
-* @param <number>  first number to compare
-* @param <number>  second number to compare
-*
-* @returns  the smallest number
-*
-*/
-alias -l min {
-  if ($1 < $2) return $1
-  return $2
-}
-
-/**
-*
-* Align helper.
-*
-* @identifier $align
-*
-* @param <available space>  available space
-* @param <actual space>     space trying to be used
-* @param <position>         current position
-*
-* @prop center              calculates the center position alignment
-* @prop oppositeSide        calculates the opposite side position alignment
-*
-* @returns                  new position based on prop
-*
-*/
-alias -l align {
-  if ($prop == center) && ($calc(($1 - $2) / 2 + $3) > $3) return $v1
-  elseif ($prop == oppositeSide) && ($calc($1 - $2 + $3) > $3) return $v1
-
-  return $3
+  hadd sbmui currentWidth 800
+  hadd sbmui currentHeight 600
 }
 

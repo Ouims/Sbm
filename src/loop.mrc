@@ -22,6 +22,21 @@ alias -l loop {
 
   hadd sbmui resize $false
 
+  var %focus = $hget(sbmui,focus)
+
+  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+    if ($calc($ticks - $hget(sbmui,cursorticks)) > 500) {
+      if ($hget(sbmui,drawcursor)) hadd sbmui drawcursor $false
+      else hadd sbmui drawcursor $true
+
+      hadd sbmui cursorticks $ticks
+    }
+    if ($hget(sbmui,drawcursor)) {
+      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))),0)
+      drawline -rn @sbm 0 1 $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 6) $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 21)
+    }
+  }
+
   drawdot @sbm
 
   .timersbm -ho 1 0 if (!$isalias(loop)) .timersbm -cho 1 0 $!timer(sbm).com $(|) else loop

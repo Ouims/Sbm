@@ -13,6 +13,11 @@ alias -l view {
 
   hadd sbm view $1
 
+  hdel -w sbmui *_*
+  hadd sbmui mouseInControl $null
+  hadd sbmui focus $null
+  hadd sbmui drawcursor $false
+
   if ($1 == menu) || ($1 == $null) {
     addControl logo logo 10 20 780 300 null null fixed
 
@@ -48,4 +53,215 @@ alias -l view {
 
     addControl menu_text options %x %y %w %h %font %size relative %text
   }
+  elseif ($1 == connect) {
+    hadd sbmui focus server
+
+    var %text = $chr(8592) Back
+    var %font = "segoe ui symbol"
+    var %size = 20
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 10
+    var %y = 5
+
+    addControl menu_text back %x %y %w %h %font %size static %text
+
+    var %text = Enter the server information and a nickname
+    var %font = "segoe ui symbol"
+    var %size = 27
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 100
+
+    addControl text title %x %y %w %h %font %size fixed %text
+
+    var %text = Server Address
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 180
+    var %y = 270
+    var %sx = %x
+    var %sw = %w
+
+    addControl text server_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 160
+    var %h = 25
+    var %x = 380
+    var %y = 272
+
+    addControl edit server %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui server_bg 8355711
+
+    var %text = Server Port
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 350
+
+    addControl text port_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 80
+    var %h = 25
+    var %x = 380
+    var %y = 352
+
+    addControl edit port %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui port_bg 8355711
+
+    var %text = Nickname
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 430
+
+    addControl text nick_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 90
+    var %h = 25
+    var %x = 380
+    var %y = 432
+
+    addControl edit nick %x %y %w %h %font %size absolute_top_left $me
+
+    hadd sbmui nick_cursor $len($me)
+
+    if ($len($me)) hadd sbmui nick_sel 0 $len($me)
+
+    hadd sbmui nick_bg 8355711
+
+    var %text = Connect
+    var %font = "segoe ui symbol"
+    var %size = 28
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 500
+
+    addControl menu_text connect %x %y %w %h %font %size absolute_top_left %text
+
+    hadd sbmui connect_disabled $true
+  }
+  elseif ($1 == create) {
+    hadd sbmui focus port
+
+    var %text = $chr(8592) Back
+    var %font = "segoe ui symbol"
+    var %size = 20
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 10
+    var %y = 5
+
+    addControl menu_text back %x %y %w %h %font %size static %text
+
+    var %text = Enter the server port and a nickname
+    var %font = "segoe ui symbol"
+    var %size = 27
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 100
+
+    addControl text title %x %y %w %h %font %size fixed %text
+
+    var %text = Server Address
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 180
+    var %y = 270
+    var %sx = %x
+    var %sw = %w
+
+    ;addControl text server_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 160
+    var %h = 25
+    var %x = 380
+    var %y = 272
+
+    ;addControl edit server %x %y %w %h %font %size absolute_top_left
+
+    var %text = Server Port
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 350
+
+    addControl text port_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 80
+    var %h = 25
+    var %x = 380
+    var %y = 352
+
+    addControl edit port %x %y %w %h %font %size absolute_top_left
+
+    hadd sbmui port_bg 8355711
+
+    var %text = Nickname
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%sw,%w,%sx).oppositeSide
+    var %y = 430
+
+    addControl text nick_label %x %y %w %h %font %size absolute_top_right %text
+
+    var %font = "segoe ui symbol"
+    var %size = 15
+    var %w = 90
+    var %h = 25
+    var %x = 380
+    var %y = 432
+
+    addControl edit nick %x %y %w %h %font %size absolute_top_left $me
+
+    hadd sbmui nick_cursor $len($me)
+
+    if ($len($me)) hadd sbmui nick_sel 0 $len($me)
+
+    hadd sbmui nick_bg 8355711
+
+    var %text = Start
+    var %font = "segoe ui symbol"
+    var %size = 28
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = $align(%ww,%w,0).center
+    var %y = 500
+
+    addControl menu_text connect %x %y %w %h %font %size absolute_top_left %text
+    
+  }
+  elseif ($1 == options) {
+
+  }
+
+  hadd sbmui currentWidth 800
+  hadd sbmui currentHeight 600
 }
