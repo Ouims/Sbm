@@ -83,7 +83,7 @@ on *:char:@sbm:*: {
   if ($hget(sbmui,$+(%focus,_type)) == edit) {
     var -p %t = $hget(sbmui,$+(%focus,_text)),%p = $hget(sbmui,$+(%focus,_cursor))
 
-    if ($keychar != $null) {
+    if ($keychar != $null) && (!$istok(8 22 9 1 13 10 24 3,$keyval,32)) {
       if ($hget(sbmui,$+(%focus,_sel))) {
         tokenize 32 $v1
 
