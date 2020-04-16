@@ -9,6 +9,31 @@ menu @sbm {
     hadd sbmui mouseInControl $null
 
     noop $hfind(sbmui,*_type,0,w,hadd sbmui mouseInControl $iif($cooInControl($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,mouseInControl)))
+
+    var %focus = $hget(sbmui,focus)
+
+    if ($mouse.key & 1) && ($hget(sbmui,$+(%focus,_type)) == edit) {
+      var %c $click(@sbm,$click(@sbm,0)).x
+
+      if ($mouse.x <= %c) {
+        var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $left($hget(sbmui,$+(%focus,_text)),%p)
+        while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) <= $calc(%c - $mouse.x)) {
+          inc %a
+        }
+        if (%a != 1) {
+          hadd sbmui $+(%focus,_sel) $calc(%p - %a + 1) %p
+        }
+      }
+      else {
+        var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
+        while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) <= $calc($mouse.x - %c)) {
+          inc %a
+        }
+        if (%a != 1) {
+          hadd sbmui $+(%focus,_sel) %p $calc(%p + %a -1)
+        }
+      }
+    }
   }
   leave: hadd sbmui mouseInControl $null
   sclick: {
