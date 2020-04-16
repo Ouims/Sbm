@@ -12,7 +12,7 @@ menu @sbm {
 
     var %focus = $hget(sbmui,focus)
 
-    if ($mouse.key & 1) && ($hget(sbmui,$+(%focus,_type)) == edit) {
+    if ($mouse.key & 1) && ($hget(sbmui,$+(%focus,_type)) == edit) && ($hget(sbmui,mouseInControl) == %focus) {
       var %c $click(@sbm,$click(@sbm,0)).x
 
       if ($mouse.x <= %c) {
@@ -72,6 +72,37 @@ menu @sbm {
       }
       elseif (%view == create) {
         if (%active == back) view menu
+      }
+    }
+  }
+}
+
+on *:char:@sbm:*: {
+  var %focus = $hget(sbmui,focus)
+
+  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+    var -p %t = $hget(sbmui,$+(%focus,_text)),%p = $hget(sbmui,$+(%focus,_cursor))
+
+    if ($keychar != $null) {
+      if ($hget(sbmui,$+(%focus,_sel))) {
+        tokenize 32 $v1
+
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %c $iif($keyval == 32,$chr(160),$keychar)
+        var %r $mid(%t,$calc($2 + 1))
+
+        hadd sbmui $+(%focus,_text) $+(%l,%c,%r)
+        hdel sbmui $+(%focus,_sel)
+      }
+      else {
+        var %l $iif(%p > 0,$left(%t,%p))
+        var %c $iif($keyval == 32,$chr(160),$keychar)
+        var %r $mid(%t,$calc(%p + 1))
+
+        if ($width($+(%l,%c,%r),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+
+        hadd sbmui $+(%focus,_text) $+(%l,%c,%r)
+        hinc sbmui $+(%focus,_cursor)
       }
     }
   }

@@ -170,7 +170,7 @@ alias -l drawControl {
 
     if ($hget(sbmui,$+($1,_text))) {
       var -p %t $v1
-      
+
       if ($hget(sbmui,$+($1,_sel))) {
         tokenize 32 $v1
         
@@ -179,6 +179,7 @@ alias -l drawControl {
         var %r $mid(%t,$calc($2 + 1))
         
         drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
+        echo -a $1 drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
         drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
       }
       else drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
