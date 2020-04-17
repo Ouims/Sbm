@@ -1,6 +1,7 @@
 on *:close:@sbm: {
   hfree sbm
   hfree sbmui
+  hfree -w sbm*history
   .timersbm off   
 }
 
@@ -17,7 +18,7 @@ menu @sbm {
 
       if ($mouse.x <= %c) {
         var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $left($hget(sbmui,$+(%focus,_text)),%p)
-        while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) <= $calc(%c - $mouse.x)) {
+        while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc(%c - $mouse.x)) {
           inc %a
         }
         if (%a != 1) {
@@ -26,7 +27,7 @@ menu @sbm {
       }
       else {
         var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
-        while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) <= $calc($mouse.x - %c)) {
+        while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc($mouse.x - %c)) {
           inc %a
         }
         if (%a != 1) {
@@ -51,10 +52,10 @@ menu @sbm {
           var %x = $hget(sbmui,$+(%active,_x))
 
           if ($mouse.x <= $calc(%x + 10)) hadd sbmui $+(%active,_cursor) 0
-          elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_size))))) hadd sbmui $+(%active,_cursor) $len(%t)
+          elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_fontsize))))) hadd sbmui $+(%active,_cursor) $len(%t)
           else {
             var %a 1
-            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_size)))) <= $mouse.x) {
+            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_fontsize)))) <= $mouse.x) {
               inc %a
             }
 
@@ -69,6 +70,9 @@ menu @sbm {
       }
       elseif (%view == connect) {
         if (%active == back) view menu
+        elseif (%active == connect) && (!$hget(sbmui,connect_disabled)) {
+          sbmclientconnect $hget(sbmui,server_text) $hget(sbmui,port_text) $hget(sbmui,nick_text)
+        }
       }
       elseif (%view == create) {
         if (%active == back) view menu
@@ -99,7 +103,7 @@ on *:char:@sbm:*: {
         var %c $iif($keyval == 32,$chr(160),$keychar)
         var %r $mid(%t,$calc(%p + 1))
 
-        if ($width($+(%l,%c,%r),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+        if ($width($+(%l,%c,%r),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
 
         hadd sbmui $+(%focus,_text) $+(%l,%c,%r)
         hinc sbmui $+(%focus,_cursor)
@@ -107,6 +111,341 @@ on *:char:@sbm:*: {
     }
   }
 }
+
+on *:keydown:@sbm:*: {
+  var %focus = $hget(sbmui,focus)
+
+  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+    var -p %t = $hget(sbmui,$+(%focus,_text)),%p = $hget(sbmui,$+(%focus,_cursor))
+
+    ;delete
+    if ($keyval == 8) {
+      if ($hget(sbmui,$+(%focus,_sel))) {
+        tokenize 32 $v1
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %r $mid(%t,$calc($2 + 1)) 
+        hadd sbmui $+(%focus,_text) $+(%l,%r)
+        hdel sbmui $+(%focus,_sel)
+      }
+      else {
+        var %l $iif(%p > 1,$left(%t,$calc(%p - 1)))
+        var %r $mid(%t,$calc(%p + 1)) 
+        hadd sbmui $+(%focus,_text) $+(%l,%r)
+        if (%p > 0) hdec sbmui $+(%focus,_cursor)
+      }
+    }
+    ;control+v
+    elseif ($keyval == 22) {
+      if ($crlf !isin $cb) {
+        if ($hget(sbmui,$+(%focus,_sel))) {
+          tokenize 32 $v1
+          var %cb $$regsubex($replace($cb,$chr(32),$chr(160),$chr(10),,$chr(9),,$chr(13),),/\xED[\xA0-\xAF][\x80-\xBF](?!\xED[\xB0-\xBF][\x80-\xBF]|\xED[\xB0-\xBF][\x80-\xBF](?!\xED[\xA0-\xAF][\x80-\xBF]))/,$chr(65533))
+          var %l $iif($1 > 0,$left(%t,$1))
+          var %r $mid(%t,$calc($2 + 1))
+          var %t $+(%l,%cb,%r)
+          if ($width(%t,$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+          hadd sbmui $+(%focus,_text) %t
+          hinc sbmui $+(%focus,_cursor) $len(%cb)
+          if (%p == $2) hdec sbmui $+(%focus,_cursor) $calc($2 - $1)
+          hdel sbmui $+(%focus,_sel)
+        }
+        else {
+          var %cb $$regsubex($replace($cb,$chr(32),$chr(160),$chr(10),,$chr(9),$chr(9),$chr(13),),/\xED[\xA0-\xAF][\x80-\xBF](?!\xED[\xB0-\xBF][\x80-\xBF]|\xED[\xB0-\xBF][\x80-\xBF](?!\xED[\xA0-\xAF][\x80-\xBF]))/,$chr(65533))
+          var %l $iif(%p > 0,$left(%t,%p))
+          var %r $mid(%t,$calc(%p + 1))
+          var %t $+(%l,%cb,%r)
+          if ($width(%t,$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+          hadd sbmui $+(%focus,_text) %t
+          hinc sbmui $+(%focus,_cursor) $len(%t)
+        }
+      }
+      else {
+        if ($hget(sbmui,$+(%focus,_sel))) {
+          tokenize 32 $v1
+          var %cb $$regsubex($replace($cb,$chr(32),$chr(160),$chr(10),,$chr(9),,$chr(13),),/\xED[\xA0-\xAF][\x80-\xBF]/,$chr(65533))
+          var %l $iif($1 > 0,$left(%t,$1))
+          var %r $mid(%t,$calc($2 + 1))
+          var %t $+(%l,%cb,%r)
+          var %a 1,%b $numtok(%t,10)
+          while (%a <= %b) {
+            if (%focus == chat) sockwrite -n sbmclient TEXT $gettok(%t,%a,10)
+            elseif ($hget(sbm,view) == connect) || ($v1 == create) {
+              if ($width($gettok(%t,%a,10),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+              hadd sbmui $+(%focus,_text) $gettok(%t,%a,10)
+              return
+            }
+            hadd -m $+(sbm,%focus,history) $calc($hget($+(sbm,%focus,history),0).item + 1) $gettok(%t,%a,10)
+            inc %a
+          }   
+          hadd sbmui $+(%focus,_history) 0
+          hadd sbmui $+(%focus,_text)
+          hadd sbmui $+(%focus,_cursor) 0
+          hdel sbmui $+(%focus,_sel)
+        }
+        else {
+          var %cb $$regsubex($replace($cb,$chr(32),$chr(160),$chr(10),,$chr(9),,$chr(13),),/\xED[\xA0-\xAF][\x80-\xBF](?!\xED[\xB0-\xBF][\x80-\xBF]|\xED[\xB0-\xBF][\x80-\xBF](?!\xED[\xA0-\xAF][\x80-\xBF]))/,$chr(65533))
+          var %l $iif(%p > 0,$left(%t,%p))
+          var %r $mid(%t,$calc(%p + 1))
+          var %t $remove($+(%l,%cb,%r),$chr(13),$chr(9))
+          var %a 1,%b $numtok(%t,10)
+          while (%a <= %b) {
+            if (%focus == chat) sockwrite -n sbmclient TEXT $gettok(%t,%a,10)
+            elseif ($hget(sbm,view) == connect) || ($v1 == create) {
+              if ($width($gettok(%t,%a,10),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+              hadd sbmui $+(%focus,_text) $gettok(%t,%a,10)
+              return
+            }
+            hadd -m $+(sbm,%focus,history) $calc($hget($+(sbm,%focus,history),0).item + 1) $gettok(%t,%a,10)
+
+            inc %a
+          }
+          hadd sbmui $+(%focus,_history) 0
+          hadd sbmui $+(%focus,_text)
+          hadd sbmui $+(%focus,_cursor) 0
+        }
+      }
+    }
+    ;#TAB
+    elseif ($keyval == 9) {
+      if (%focus == chat) {
+        if ($hget(sbmui,$+(%focus,_sel))) return    
+        if ($regex($left($hget(sbmui,$+(%focus,_text)),$hget(sbmui,$+(%focus,_cursor))),/.*\B@(\S*)/u)) {
+          if ($hget(sbm,tabcomp)) {
+            hinc sbm tabc
+            if ($hget(sbm,tabc) > $wildtok($hget(sbm,nicks),$v1,0,32)) hadd sbm tabc 1
+            var %cb $wildtok($hget(sbm,nicks),$hget(sbm,tabcomp),$hget(sbm,tabc),32),%p1 $regml(1).pos - 1
+            var %l $iif(%p1 > 0,$left(%t,%p1))
+            var %r $mid(%t,$calc(%p1 + $hget(sbm,tabcompold) + 1)),%a
+            var %t $+(%l,%cb,%r)
+            if ($width(%t,$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+            hdec sbmui $+(%focus,_cursor) $hget(tabcompold)
+            hadd sbmui $+(%focus,_text) %t
+            hadd sbmui $+(%focus,_cursor) $calc(%p1 + $len(%cb))
+            hadd sbm tabcompold $len(%cb)
+          }
+          else {
+            hinc sbm tabc
+            if ($hget(sbm,tabc) > $wildtok($hget(sbm,nicks),$regml(1) $+ *,0,32)) hadd sbm tabc 1
+            var -s %cb $wildtok($hget(sbm,nicks),$regml(1) $+ *,$hget(sbm,tabc),32),%p1 $regml(1).pos - 1
+            if (%cb == $null) {
+              hdel sbm tabc
+              hdel sbm tabcomp
+              return
+            }
+            var %l $iif(%p1 > 0,$left(%t,%p1))
+            var %r $mid(%t, $calc( %p1 + 1 + $len($regml(1))))
+            var %t $+(%l,%cb,%r)
+            if ($width(%t,$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) > $calc($hget(sbmui,$+(%focus,_w)) - 20)) return
+            hadd sbm tabcomp $regml(1) $+ *
+            hadd sbm tabcompold $len(%cb)
+            hadd sbmui $+(%focus,_text) %t
+            hinc sbmui $+(%focus,_cursor) $len(%cb)
+          }
+        }
+        else {
+          hdel sbm tabc
+          hdel sbm tabcomp
+        }
+      }
+      else {
+        var %l = $null
+
+        noop $hfind(sbmui,edit,0,n,var %l = %l $iif($right($1,5) == _type,$left($1,-5))).data
+
+        var %f $findtok(%l,%focus,32)
+
+        dec %f
+
+        if (%f == 0) %f = $numtok(%l,32)
+
+        hdel sbmui $+(%focus,_sel)
+        hadd sbmui focus $gettok(%l,%f,32)
+
+        %focus = $hget(sbmui,focus)
+
+        if ($hget(sbmui,$+(%focus,_text)) != $null) {
+          hadd sbmui $+(%focus,_sel) 0 $len($v1)
+          hadd sbmui $+(%focus,_cursor) $len($v1)
+        }
+      }      
+    }
+    ;ctrl A
+    elseif ($keyval == 1) {
+      if ($hget(sbmui,$+(%focus,_text)) != $null) {
+        hadd sbmui $+(%focus,_sel) 0 $len($v1)
+        hadd sbmui $+(%focus,_cursor) $len($v1)
+      }
+    }
+    ;#arrow
+    elseif ($keyval $+ $keychar == 37) {
+      if ($mouse.key & 4) {
+        tokenize 32 $hget(sbmui,$+(%focus,_sel))
+        if ($2 > %p) {
+          if (%p != $calc($iif($hget(sbmui,$+(%focus,_sel)),$gettok($hget(sbmui,$+(%focus,_sel)),2,32),%p) -1)) {
+            if ($v2 <= $len(%t)) {
+              hadd sbmui $+(%focus,_sel) %p $v1
+            }
+          }
+          else hdel sbmui $+(%focus,_sel)
+        }
+        else {
+          if ($calc($iif($hget(sbmui,$+(%focus,_sel)),$gettok($hget(sbmui,$+(%focus,_sel)),1,32),%p) -1) != %p) {
+            if ($v1 >= 0) {
+              hadd sbmui $+(%focus,_sel) $v1 %p
+            }
+          }
+          else hdel sbmui $+(%focus,_sel)
+        }
+      }
+      else {
+        if ($hget(sbmui,$+(%focus,_sel))) {
+          hadd sbmui $+(%focus,_cursor) $gettok($v1,1,32)
+        }
+        elseif (%p > 0) hdec sbmui $+(%focus,_cursor)
+        hdel sbmui $+(%focus,_sel)
+      }
+    }
+    elseif ($keyval $+ $keychar == 39) {
+      if ($mouse.key & 4) {
+        tokenize 32 $hget(sbmui,$+(%focus,_sel))
+        if ($2 > %p) || ($1 == $null) {
+          if (%p != $calc($iif($hget(sbmui,$+(%focus,_sel)),$gettok($hget(sbmui,$+(%focus,_sel)),2,32),%p) +1)) {
+            if ($v2 <= $len(%t)) {
+              hadd sbmui $+(%focus,_sel) %p $v1
+            }
+          }
+        }
+        else {
+          if (%p != $calc($iif($hget(sbmui,$+(%focus,_sel)),$gettok($hget(sbmui,$+(%focus,_sel)),1,32),%p) +1)) {
+            if ($v2 <= $len(%t)) {
+              hadd sbmui $+(%focus,_sel) $v1 %p
+            }
+          }
+
+          else hdel sbmui $+(%focus,_sel)
+        }
+      }
+      else {
+        if ($hget(sbmui,$+(%focus,_sel))) {
+          hadd sbmui $+(%focus,_cursor) $gettok($v1,2,32)
+        }
+        elseif (%p < $len(%t)) hinc sbmui $+(%focus,_cursor)
+        hdel sbmui $+(%focus,_sel)    
+      }
+    }
+    elseif ($keyval $+ $keychar == 38) {
+      hinc sbmui $+(%focus,_history)
+      var %c $calc($hget($+(sbm,%focus,history),0).item - $hget(sbmui,$+(%focus,_history)) + 1)
+      if (%c == 0) {
+        hdec sbmui $+(%focus,_history)
+        return 
+      }
+      hdel sbmui $+(%focus,_sel)
+      hadd sbmui $+(%focus,_text) $hget($+(sbm,%focus,history),%c)
+      hadd sbmui $+(%focus,_cursor) $len($hget(sbmui,$+(%focus,_text)))
+
+    }
+    elseif ($keyval $+ $keychar == 40) {
+      hdec sbmui $+(%focus,_history)
+      var %c $calc($hget($+(sbm,%focus,history),0).item - $hget(sbmui,$+(%focus,_history)) + 1)
+      if (%c <= $hget($+(sbm,%focus,history),0).item) { 
+        hdel sbmui $+(%focus,_sel)
+        hadd sbmui $+(%focus,_text) $hget($+(sbm,%focus,history),%c)
+        hadd sbmui $+(%focus,_cursor) $len($hget(sbmui,$+(%focus,_text)))
+      }
+      else {
+        if ($hget(sbmui,$+(%focus,_history)) == -1) && ($hget(sbmui,$+(%focus,_history)) != $null) && ($hget(sbmui,$+(%focus,_text)) != $null) {
+          hadd -m $+(sbm,%focus,history) $calc($hget($+(sbm,%focus,history),0).item + 1) $hget(sbmui,$+(%focus,_text))
+          ;hadd -m %focus history 0
+        }
+        hdel sbmui $+(%focus,_sel)
+        hadd sbmui $+(%focus,_text)
+        hadd sbmui $+(%focus,_cursor) 0
+        hadd sbmui $+(%focus,_history) 0
+      }
+    }
+    ; delete
+    elseif ($keyval == 46) && ($keychar == $null) {
+      if ($hget(sbmui,$+(%focus,_sel))) {
+        tokenize 32 $v1
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %r $mid(%t,$calc($2 + 1)) 
+        hadd sbmui $+(%focus,_editbox) $+(%l,%r)
+        if ($2 == %p) hdec sbmui $+(%focus,_cursor) $calc($2 - $1)
+        hdel sbmui $+(%focus,_sel)
+      }
+      else {
+        var %l $iif(%p > 0,$left(%t,%p))
+        var %r $mid(%t,$calc(%p + 2)) 
+        hadd sbmui $+(%focus,_editbox) $+(%l,%r)
+      }
+    }
+    ; end
+    elseif ($keyval $+ $keychar == 35) {
+      if ($mouse.key & 4) {
+        if (%p != $len(%t)) hadd sbmui $+(%focus,_sel) %p $len(%t) 
+        else hdel sbmui $+(%focus,_sel)
+      }
+      else hadd sbmui $+(%focus,_cursor) $len(%t)
+    }
+    ; home
+    elseif ($keyval $+ $keychar == 36) {
+      if ($mouse.key & 4) {
+        if (0 != %p) hadd sbmui $+(%focus,_sel) 0 %p 
+        else hdel sbmui $+(%focus,_sel)
+      }
+      else hadd sbmui $+(%focus,_cursor) 0
+    }
+    ; ENTER
+    elseif ($keyval == 13) || ($keyval == 10) {
+      if (%focus == chat) {
+        sockwrite -n sbmclient TEXT $$hget(sbmui,$+(%focus,_text))
+        if (!$hget(sbmui,$+(%focus,_history))) hadd -m %focus $+ history $calc($hget(%focus $+ history,0).item + 1) $hget(sbmui,$+(%focus,_text))
+        hadd sbmui $+(%focus,_history) 0
+        hdel sbmui $+(%focus,_sel)
+        hadd sbmui $+(%focus,_editbox)
+        hadd sbmui $+(%focus,_cursor) 0
+      }
+      elseif ($hget(sbmui,connect_disabled) != $null) && ($hget(sbmui,connect_disabled) == $false) {
+        if ($hget(sbmui,view) == create) {
+          if ($hget(sbmserv)) return
+          sbmserv $hget(sbmui,port_text) restart
+          sbmclientconnect 127.0.0.1 $hget(sbmui,port_text) $hget(sbmui,nick_text)
+        }
+        else sbmclientconnect $hget(sbmui,server_text) $hget(sbmui,port_text) $hget(sbmui,nick_text)
+      }
+    }
+    ; ctrl
+    elseif ($keyval == 17) {
+
+    }
+    ; alt
+    elseif ($keyval == 18) {
+
+    }
+    ;control+x
+    elseif ($keyval == 24) {
+      if ($hget(sbmui,$+(%focus,_sel))) {
+        tokenize 32 $v1
+        clipboard $mid(%t,$calc($1 + 1),$calc($2 - $1))
+        var %l $iif($1 > 0,$left(%t,$1))
+        var %r $mid(%t,$calc($2 + 1)) 
+        hadd sbmui $+(%focus,_text) $+(%l,%r)
+        hdel sbmui $+(%focus,_sel)      
+        if (%p == $2) hdec sbmui $+(%focus,_cursor) $calc($2 - $1)
+      }
+    }
+    ;control+c
+    elseif ($keyval == 3) {
+      if ($hget(sbmui,$+(%focus,_sel))) {
+        tokenize 32 $v1
+        clipboard $mid(%t,$calc($1 + 1),$calc($2 - $1))
+      }
+    }
+  }
+}
+
+on *:keyup:@sbm:37,38,39,40,32:if ($hget(sbm,view) == game) sockwrite -n sbmclient moveu $keyval
 
 /**
 *
@@ -128,6 +467,14 @@ alias -l loop {
     hadd sbmui currentHeight %wh
   }
 
+  if ($hget(sbm,view) == connect) {
+    hadd sbmui connect_disabled $true
+
+    if ($iptype($hget(sbmui,server_text)) != $null) && ($regex($hget(sbmui,port_text),$sbmreg_validport)) && ($hget(sbmui,nick_text) != $null) {
+      hadd sbmui connect_disabled $false
+    }
+  }
+
   noop $hfind(sbmui,*_type,0,w,drawControl $left($1,-5))
 
   hadd sbmui resize $false
@@ -142,7 +489,7 @@ alias -l loop {
       hadd sbmui cursorticks $ticks
     }
     if ($hget(sbmui,drawcursor)) {
-      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))),0)
+      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))),0)
       drawline -rn @sbm 0 1 $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 6) $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 21)
     }
   }
@@ -207,6 +554,9 @@ alias sbm {
     loop
   }
 }
+
+alias sbmreg_validserver return ^(?:(?:25[0-5]|2[0-4]\d|1?\d\d?)(?:\.(?!$)|$)){4}|^(?:\w+\.)+\w+$
+alias sbmreg_validport return ^(?:[1-9]|\d{1,4}|[1-5]\d{4}|6(?:[0-4]\d{3}|5(?:[0-4]\d{2}|5(?:[0-2]\d|3[0-5]))))$
 
 /**
 *
@@ -347,7 +697,7 @@ alias -l addControl {
   }
 
   hadd sbmui $+($2,_font) $7
-  hadd sbmui $+($2,_size) $8
+  hadd sbmui $+($2,_fontsize) $8
 
   hadd sbmui $+($2,_osize) $8
 
@@ -374,7 +724,7 @@ alias -l drawControl {
   var %i = $hget(sbmui,$+($1,_i))
   var %e = $hget(sbmui,$+($1,_e))
   var %font = $hget(sbmui,$+($1,_font))
-  var %size = $hget(sbmui,$+($1,_size))
+  var %size = $hget(sbmui,$+($1,_fontsize))
   var %style = $hget(sbmui,$+($1,_style))
 
   if (%style != static) {
@@ -451,7 +801,7 @@ alias -l drawControl {
       hadd sbmui $+($1,_y) %y
       hadd sbmui $+($1,_w) %w
       hadd sbmui $+($1,_h) %h
-      hadd sbmui $+($1,_size) %size
+      hadd sbmui $+($1,_fontsize) %size
     }
   }
 
@@ -479,7 +829,6 @@ alias -l drawControl {
         var %r $mid(%t,$calc($2 + 1))
         
         drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
-        echo -a $1 drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
         drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
       }
       else drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t

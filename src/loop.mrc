@@ -18,6 +18,14 @@ alias -l loop {
     hadd sbmui currentHeight %wh
   }
 
+  if ($hget(sbm,view) == connect) {
+    hadd sbmui connect_disabled $true
+
+    if ($iptype($hget(sbmui,server_text)) != $null) && ($regex($hget(sbmui,port_text),$sbmreg_validport)) && ($hget(sbmui,nick_text) != $null) {
+      hadd sbmui connect_disabled $false
+    }
+  }
+
   noop $hfind(sbmui,*_type,0,w,drawControl $left($1,-5))
 
   hadd sbmui resize $false
@@ -32,7 +40,7 @@ alias -l loop {
       hadd sbmui cursorticks $ticks
     }
     if ($hget(sbmui,drawcursor)) {
-      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_size))),0)
+      var %x = $iif($hget(sbmui,$+(%focus,_cursor)) > 0,$width($left($hget(sbmui,$+(%focus,_text)),$v1),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))),0)
       drawline -rn @sbm 0 1 $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 6) $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 21)
     }
   }

@@ -47,7 +47,7 @@ alias -l addControl {
   }
 
   hadd sbmui $+($2,_font) $7
-  hadd sbmui $+($2,_size) $8
+  hadd sbmui $+($2,_fontsize) $8
 
   hadd sbmui $+($2,_osize) $8
 
@@ -74,7 +74,7 @@ alias -l drawControl {
   var %i = $hget(sbmui,$+($1,_i))
   var %e = $hget(sbmui,$+($1,_e))
   var %font = $hget(sbmui,$+($1,_font))
-  var %size = $hget(sbmui,$+($1,_size))
+  var %size = $hget(sbmui,$+($1,_fontsize))
   var %style = $hget(sbmui,$+($1,_style))
 
   if (%style != static) {
@@ -151,7 +151,7 @@ alias -l drawControl {
       hadd sbmui $+($1,_y) %y
       hadd sbmui $+($1,_w) %w
       hadd sbmui $+($1,_h) %h
-      hadd sbmui $+($1,_size) %size
+      hadd sbmui $+($1,_fontsize) %size
     }
   }
 
@@ -179,7 +179,6 @@ alias -l drawControl {
         var %r $mid(%t,$calc($2 + 1))
         
         drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
-        echo -a $1 drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
         drawtext -rbn @sbm $hget(sbmoptions,coloreditseltext) $hget(sbmoptions,coloreditselbg) %font %size $calc(%x + 10 + $width(%l,%font,%size)) $calc(%y + 3) %m
       }
       else drawtext -rn @sbm $hget(sbmoptions,coloredittext) %font %size $calc(%x + 10) $calc(%y + 3) %t
