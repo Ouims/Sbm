@@ -1775,6 +1775,16 @@ alias -l view {
     var %y = 520
 
     addControl menu_text options %x %y %w %h %font %size relative %text
+
+    if ($hget(sbm,view) == lobby) {
+      sockclose sbmclient
+      hdel -w sbm nick*
+      hdel sbm owner
+      hdel -w sbm player?
+      hdel sbm scroll
+      hfree -w sbmchat
+      if ($isalias(sbmserv)) sbmserv stop
+    }
   }
   elseif ($1 == connect) {
     hadd sbmui focus server
@@ -2050,6 +2060,11 @@ alias -l view {
     addControl edit chat 5 570 760 25 15 15 "segoe ui symbol" 15 static
 
     hadd sbmui display_current 0
+  }
+
+  if ($hget(sbm,view) == lobby) {
+    hfree -w sbmchat
+    hdel -w sbm player?
   }
 
   hadd sbm view $1
