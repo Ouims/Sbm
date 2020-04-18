@@ -238,6 +238,8 @@ on *:appactive: {
 alias releaseSBM {
   bundle $qt($scriptdirsrc) $qt($scriptdirdist) sbm.mrc 2
 
+  noop $findfile($scriptdirsrc\assets,*,0,2,.copy -o $qt($1) $qt($+($scriptdirdist\assets\,$nopath($1))))
+
   cleanCodeFile $qt($scriptdirdist\sbm.mrc)
       
   .reload -rs $qt($scriptdirdist\sbm.mrc)
