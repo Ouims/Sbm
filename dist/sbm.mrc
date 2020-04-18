@@ -284,7 +284,7 @@ on *:char:@sbm:*: {
 on *:keydown:@sbm:*: {
   var %focus = $hget(sbmui,focus)
 
-  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+  if ($hget(sbmui,$+(%focus,_type)) == edit) { echo -s $keyval focus %focus
     var -p %t = $hget(sbmui,$+(%focus,_text)),%p = $hget(sbmui,$+(%focus,_cursor))
 
     ;delete
@@ -304,7 +304,7 @@ on *:keydown:@sbm:*: {
       }
     }
     ;control+v
-    elseif ($keyval == 22) {
+    elseif ($keyval == 22) { echo -s here
       if ($crlf !isin $cb) {
         if ($hget(sbmui,$+(%focus,_sel))) {
           tokenize 32 $v1
@@ -2094,4 +2094,3 @@ alias sbmchangeview {
   hadd sbmui currentWidth 800
   hadd sbmui currentHeight 600
 }
-
