@@ -2,7 +2,7 @@
 *
 * Adds a control.
 *
-* @command /addControl
+* @command /sbmaddcontrol
 *
 * @param <type>   type of control
 * @param <id>     id of the control
@@ -24,9 +24,11 @@
 *                 static: default, position and size stay the same no matter what
 * @param [text]   text of control
 *
+* @global
+*
 */
-alias -l addControl {
-  tokenize 13 $getParameters($1-)
+alias sbmaddcontrol {
+  tokenize 13 $sbmgetparams($1-)
 
   hadd sbmui $+($2,_type) $1
   hadd sbmui $+($2,_x) $3
@@ -43,7 +45,7 @@ alias -l addControl {
     hadd sbmui $+($2,_i) $7
     hadd sbmui $+($2,_e) $8
 
-    tokenize 13 $getParameters($1-6 $9-)
+    tokenize 13 $sbmgetparams($1-6 $9-)
   }
 
   hadd sbmui $+($2,_font) $7
@@ -62,12 +64,14 @@ alias -l addControl {
 *
 * Draws control.
 *
-* @command /drawControl
+* @command /sbmdrawcontrol
 *
 * @param <id>  control id
 *
+* @global
+*
 */
-alias -l drawControl {
+alias sbmdrawcontrol {
   if (!$hget(sbmui,$+($1,_hidden))) {
     var %type = $hget(sbmui,$+($1,_type))
     var %x = $hget(sbmui,$+($1,_x))
@@ -106,7 +110,7 @@ alias -l drawControl {
         var %oh = $hget(sbmui,$+($1,_oh))
         var %osize = $hget(sbmui,$+($1,_osize))
 
-        var %scale = $calc(1 / $max($calc(%oww / %ww),$calc(%owh / %wh)))
+        var %scale = $calc(1 / $sbmmax($calc(%oww / %ww),$calc(%owh / %wh)))
 
         if (%style == relative) {          
           %x = $calc((%ox / %oww) * %ww + %wx)
@@ -207,7 +211,7 @@ alias -l drawControl {
     elseif (%type == elevator) {
       drawrect -rfn @sbm $hget(sbmoptions,colormainbg) 1 %x %y %w %h
       var -p %t = $hget(sbmui,$+($1,_text))
-      %x = $align(%w,$width(%t,%font,%size),%x).center
+      %x = $sbmalign(%w,$width(%t,%font,%size),%x).center
       drawtext -rn @sbm $hget(sbmoptions,colorelevator) %font %size %x %y %t
     }
     elseif (%type == scroll) {
@@ -237,14 +241,16 @@ alias -l drawControl {
 *
 * Checks if a coordinate is within a UI control.
 *
-* @identifer $cooInControl
+* @identifer $sbmcooincontrol
 *
 * @param <id>        id of the control
 * @param <x>         x position of coordinate
 * @param <y>         y position of coordinate
 *
+* @global
+*
 */
-alias -l cooInControl {
+alias sbmcooincontrol {
   if (!$hget(sbmui,$+($1,_hidden))) {
     if ($hget(sbmui,$+($1,_i)) != $null) {
       return $inroundrect($2,$3,$hget(sbmui,$+($1,_x)),$hget(sbmui,$+($1,_y)),$hget(sbmui,$+($1,_w)),$hget(sbmui,$+($1,_h)),$hget(sbmui,$+($1,_i)),$hget(sbmui,$+($1,_e)))
@@ -263,17 +269,19 @@ alias sbmaddtext {
 
   if (%i == $hget(sbmui,display_current)) hinc sbmui display_current
 
-  resizeChatThumb
+  sbmresizechatthumb
 }
 
 /**
 *
 * Resizes the chat's thumb.
 *
-* @command /resizeChatThumb
+* @command /sbmresizechatthumb
+*
+* @global
 *
 */
-alias -l resizeChatThumb {
+alias sbmresizechatthumb {
   var %lines = $hget(sbmchat,0).item
   if (%lines) {
     var %height = $hget(sbmui,display_h)

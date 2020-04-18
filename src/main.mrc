@@ -48,9 +48,9 @@ alias sbm {
     hadd sbmui originalWidth 800
     hadd sbmui originalHeight 600
 
-    view menu
+    sbmchangeview menu
 
-    loop
+    sbmloop
   }
 }
 

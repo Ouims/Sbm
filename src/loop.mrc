@@ -2,10 +2,12 @@
 *
 * Game loop.
 *
-* @command /loop
+* @command /sbmloop
+*
+* @global
 *
 */
-alias -l loop {
+alias sbmloop {
   var %ww = $window(@sbm).dw
   var %wh = $window(@sbm).dh
 
@@ -45,7 +47,7 @@ alias -l loop {
         hadd sbmui chat_y $calc(%wh - 30)
         hadd sbmui chat_w $calc(%ww - 40)
 
-        resizeChatThumb
+        sbmresizechatthumb
       }
       else {
         hadd sbmui display_hidden $true
@@ -99,7 +101,7 @@ alias -l loop {
     }
   }
 
-  noop $hfind(sbmui,*_type,0,w,drawControl $left($1,-5))
+  noop $hfind(sbmui,*_type,0,w,sbmdrawcontrol $left($1,-5))
 
   hadd sbmui resize $false
 
@@ -120,5 +122,5 @@ alias -l loop {
 
   drawdot @sbm
 
-  .timersbm -ho 1 0 if (!$isalias(loop)) .timersbm -cho 1 0 $!timer(sbm).com $(|) else loop
+  .timersbm -ho 1 0 if (!$isalias(sbmloop)) .timersbm -cho 1 0 $!timer(sbm).com $(|) else sbmloop
 }

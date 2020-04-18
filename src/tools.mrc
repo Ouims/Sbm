@@ -2,15 +2,17 @@
 *
 * Tokenizes a string based on a delimiter or quotes just as mIRC does for native commands.
 *
-* @identifier $getParameters
+* @identifier $sbmgetparams
 *
 * @param <parameters>       String containing your parameters
 * @param [delimiter=\x20]   The delimiter for your parameters
 *
 * @returns  String tokenized into $cr based on a specified delimiter or double quotes.
 *
+* @global
+*
 */
-alias -l getParameters {
+alias sbmgetparams {
   set -l %tokenized $null
   set -l %token 1
   set -l %chr $2
@@ -35,15 +37,17 @@ alias -l getParameters {
 *
 * Compares two numbers.
 *
-* @identifier $max
+* @identifier $sbmmax
 *
 * @param <number>  first number to compare
 * @param <number>  second number to compare
 *
 * @returns  the biggest number
 *
+* @global
+*
 */
-alias -l max {
+alias sbmmax {
   if ($1 > $2) return $1
   return $2
 }
@@ -52,15 +56,17 @@ alias -l max {
 *
 * Compares two numbers.
 *
-* @identifier $min
+* @identifier $sbmmin
 *
 * @param <number>  first number to compare
 * @param <number>  second number to compare
 *
 * @returns  the smallest number
 *
+* @global
+*
 */
-alias -l min {
+alias sbmmin {
   if ($1 < $2) return $1
   return $2
 }
@@ -69,7 +75,7 @@ alias -l min {
 *
 * Align helper.
 *
-* @identifier $align
+* @identifier $sbmalign
 *
 * @param <available space>  available space
 * @param <actual space>     space trying to be used
@@ -80,8 +86,10 @@ alias -l min {
 *
 * @returns                  new position based on prop
 *
+* @global
+*
 */
-alias -l align {
+alias sbmalign {
   if ($prop == center) && ($calc(($1 - $2) / 2 + $3) > $3) return $v1
   elseif ($prop == oppositeSide) && ($calc($1 - $2 + $3) > $3) return $v1
 

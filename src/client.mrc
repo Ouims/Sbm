@@ -25,7 +25,7 @@ on *:sockread:sbmclient:{
     if ($1 === WELCOME) {
       hadd -m sbm nick $2
       sockmark $sockname $2
-      view lobby
+      sbmchangeview lobby
       sbmaddtext $asctime($ctime,[HH:nn:ss]) * Welcome to the server, users connected: $str($chr(160),3) $hget(sbm,nicks)
     }
     elseif ($1 == nicks) {

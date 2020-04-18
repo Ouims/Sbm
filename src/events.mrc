@@ -4,7 +4,9 @@ on *:close:@sbm: {
   hfree -w sbm*history
   hfree -w sbmmap
   hfree -w sbmoptions
-  hfree sbmchat
+  hfree -w sbmchat
+  hfree -w sbmmap
+  hfree -w sbmoptions
   .timersbm off
   sockclose sbmclient
   if ($hget(sbmserv)) sbmserv stop
@@ -14,7 +16,7 @@ menu @sbm {
   mouse: {
     hadd sbmui mouseInControl $null
 
-    noop $hfind(sbmui,*_type,0,w,hadd sbmui mouseInControl $iif($cooInControl($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,mouseInControl)))
+    noop $hfind(sbmui,*_type,0,w,hadd sbmui mouseInControl $iif($sbmcooincontrol($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,mouseInControl)))
 
     var %focus = $hget(sbmui,focus)
 
@@ -81,24 +83,24 @@ menu @sbm {
       }
 
       if (%view == menu) {
-        if (%in_mouse == connect) view connect
-        elseif (%in_mouse == create) view create
+        if (%in_mouse == connect) sbmchangeview connect
+        elseif (%in_mouse == create) sbmchangeview create
       }
       elseif (%view == connect) {
-        if (%in_mouse == back) view menu
+        if (%in_mouse == back) sbmchangeview menu
         elseif (%in_mouse == connect) && (!$hget(sbmui,connect_disabled)) {
           sbmclientconnect $hget(sbmui,server_text) $hget(sbmui,port_text) $hget(sbmui,nick_text)
         }
       }
       elseif (%view == create) {
-        if (%in_mouse == back) view menu
+        if (%in_mouse == back) sbmchangeview menu
         elseif (%in_mouse == connect) && (!$hget(sbmui,connect_disabled)) {
           sbmserv $hget(sbmui,port_text) restart
           sbmclientconnect 127.0.0.1 $hget(sbmui,port_text) $hget(sbmui,nick_text)
         }
       }
       elseif (%view == lobby) {
-        if (%in_mouse == back) view menu
+        if (%in_mouse == back) sbmchangeview menu
         elseif (%in_mouse == start) {
           sockwrite -n sbmclient ready
         }
