@@ -85,8 +85,20 @@ alias -l drawControl {
       var %wh = $window(@sbm).dh
 
       if ($hget(sbmui,resize)) {
+        var %wx = 0
+        var %wy = 0
         var %oww = $hget(sbmui,originalWidth)
         var %owh = $hget(sbmui,originalHeight)
+        var %parent = $hget(sbmui,$+($1,_parent))
+
+        if (%parent) {
+          %wx = $hget(sbmui,$+(%parent,_x))
+          %wy = $hget(sbmui,$+(%parent,_y))
+          %ww = $hget(sbmui,$+(%parent,_w))
+          %wh = $hget(sbmui,$+(%parent,_h))
+          %oww = $hget(sbmui,$+(%parent,_ow))
+          %owh = $hget(sbmui,$+(%parent,_oh))
+        }
 
         var %ox = $hget(sbmui,$+($1,_ox))
         var %oy = $hget(sbmui,$+($1,_oy))
@@ -96,9 +108,9 @@ alias -l drawControl {
 
         var %scale = $calc(1 / $max($calc(%oww / %ww),$calc(%owh / %wh)))
 
-        if (%style == relative) {
-          %x = $calc((%ox / %oww) * %ww)
-          %y = $calc((%oy / %owh) * %wh)
+        if (%style == relative) {          
+          %x = $calc((%ox / %oww) * %ww + %wx)
+          %y = $calc((%oy / %owh) * %wh + %wy)
           %w = $calc((%ow / %oww) * %ww)
           %h = $calc((%oh / %owh) * %wh)
 
@@ -123,8 +135,8 @@ alias -l drawControl {
           var %rw = $calc((%ow / %oww) * %ww)
           var %rh = $calc((%oh / %owh) * %wh)
 
-          %x = $calc((%rw - %w) / 2 + %x)
-          %y = $calc((%rh - %h) / 2 + %y)
+          %x = $calc((%rw - %w) / 2 + %x + %wx)
+          %y = $calc((%rh - %h) / 2 + %y + %wy)
 
           if (text isin %type) {
             %size = $calc(%osize * %scale)
@@ -150,6 +162,8 @@ alias -l drawControl {
           %y = $calc(((%oy + %oh) / %owh) * %wh - %oh)
         }
 
+        if (%size < 0) %size = 0
+
         hadd sbmui $+($1,_x) %x
         hadd sbmui $+($1,_y) %y
         hadd sbmui $+($1,_w) %w
@@ -166,7 +180,7 @@ alias -l drawControl {
 
       drawtext -nr @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
     }
-    if (%type == text) drawtext -nr @sbm $hget(sbmoptions,colornormal) %font %size %x %y $hget(sbmui,$+($1,_text))
+    if (%type == text) drawtext -npr @sbm $iif($hget(sbmui,$+($1,_forecolor)),$v1,$hget(sbmoptions,colornormal)) %font %size %x %y $hget(sbmui,$+($1,_text))
     elseif (%type == logo) drawpic -cstn @sbm 16777215 %x %y %w %h $qt($scriptdirassets\logo.png)
     elseif (%type == edit) {
       drawrect -dfrn @sbm $hget(sbmui,$+($1,_bg)) 1 %x %y %w %h %i %e
@@ -201,8 +215,22 @@ alias -l drawControl {
 
       if ($hget(sbmui,$+($1,_thumb))) drawrect -rfn @sbm 16777215 1 %x $calc(%y + $hget(sbmui,$+($1,_thumb_position))) %w $v1
     }
+    elseif (%type == sprite) {
+      tokenize 32 $hget(sbmui,$+($1,_text))
+
+      drawpic -nst @sbm $1 %x %y %w %h $2-
+    }
+    elseif (%type == play_text) {
+      var %color = $hget(sbmoptions,colorplay)
+
+      if ($1 == $hget(sbmui,mouseInControl)) %color = $hget(sbmoptions,colorhoverplay)
+      if ($hget(sbmui,$+($1,_disabled))) %color = 13816530
+
+      drawtext -rpn @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
+    }
+
+    ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
   }
-  ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
 }
 
 /**

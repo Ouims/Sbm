@@ -98,7 +98,11 @@ menu @sbm {
         }
       }
       elseif (%view == lobby) {
-        if (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
+        if (%in_mouse == back) view menu
+        elseif (%in_mouse == start) {
+          sockwrite -n sbmclient ready
+        }
+        elseif (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
           hdec sbmui display_current
           hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
         }

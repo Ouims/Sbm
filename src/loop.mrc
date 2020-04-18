@@ -18,7 +18,17 @@ alias -l loop {
     hadd sbmui currentHeight %wh
 
     if ($hget(sbm,view) == lobby) {
-      if (%wh > 480) {
+      hadd sbmui menu_x 0
+      hadd sbmui menu_w %ww
+      hadd sbmui menu_h 400
+      
+      if (%ww > 800) {
+        hadd sbmui menu_x $calc((%ww - 800) / 2)
+        hadd sbmui menu_w 800
+      }
+      if (%wh < 400) hadd sbmui menu_h $v1
+
+      if (%wh > 480) && (%ww > 200) {
         hdel sbmui display_hidden $false
         hdel sbmui up_hidden $false
         hdel sbmui scroll_hidden $false
@@ -55,7 +65,14 @@ alias -l loop {
     }
   }
 
-  if ($hget(sbm,view) == lobby) {    
+  if ($hget(sbm,view) == lobby) {  
+    if ($hget(sbm,owner)) {
+      hadd sbmui start_hidden $false
+      hinc sbm startflash
+      if ($hget(sbm,startflash) == 6) hadd sbm startflash 1
+      hadd sbmui start_forecolor $gettok(64 92 127 168 255,$hget(sbm,startflash),32)
+    }
+
     var %lines = $hget(sbmchat,0).item
 
     if (%lines) && (!$hget(sbmui,display_hidden)) {
@@ -88,7 +105,7 @@ alias -l loop {
 
   var %focus = $hget(sbmui,focus)
 
-  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+  if ($hget(sbmui,$+(%focus,_type)) == edit) && (!$hget(sbmui,$+(%focus,_hidden))) {
     if ($calc($ticks - $hget(sbmui,cursorticks)) > 500) {
       if ($hget(sbmui,drawcursor)) hadd sbmui drawcursor $false
       else hadd sbmui drawcursor $true

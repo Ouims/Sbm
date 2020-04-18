@@ -223,7 +223,11 @@ menu @sbm {
         }
       }
       elseif (%view == lobby) {
-        if (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
+        if (%in_mouse == back) view menu
+        elseif (%in_mouse == start) {
+          sockwrite -n sbmclient ready
+        }
+        elseif (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
           hdec sbmui display_current
           hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
         }
@@ -646,7 +650,17 @@ alias -l loop {
     hadd sbmui currentHeight %wh
 
     if ($hget(sbm,view) == lobby) {
-      if (%wh > 480) {
+      hadd sbmui menu_x 0
+      hadd sbmui menu_w %ww
+      hadd sbmui menu_h 400
+      
+      if (%ww > 800) {
+        hadd sbmui menu_x $calc((%ww - 800) / 2)
+        hadd sbmui menu_w 800
+      }
+      if (%wh < 400) hadd sbmui menu_h $v1
+
+      if (%wh > 480) && (%ww > 200) {
         hdel sbmui display_hidden $false
         hdel sbmui up_hidden $false
         hdel sbmui scroll_hidden $false
@@ -683,7 +697,14 @@ alias -l loop {
     }
   }
 
-  if ($hget(sbm,view) == lobby) {    
+  if ($hget(sbm,view) == lobby) {  
+    if ($hget(sbm,owner)) {
+      hadd sbmui start_hidden $false
+      hinc sbm startflash
+      if ($hget(sbm,startflash) == 6) hadd sbm startflash 1
+      hadd sbmui start_forecolor $gettok(64 92 127 168 255,$hget(sbm,startflash),32)
+    }
+
     var %lines = $hget(sbmchat,0).item
 
     if (%lines) && (!$hget(sbmui,display_hidden)) {
@@ -716,7 +737,7 @@ alias -l loop {
 
   var %focus = $hget(sbmui,focus)
 
-  if ($hget(sbmui,$+(%focus,_type)) == edit) {
+  if ($hget(sbmui,$+(%focus,_type)) == edit) && (!$hget(sbmui,$+(%focus,_hidden))) {
     if ($calc($ticks - $hget(sbmui,cursorticks)) > 500) {
       if ($hget(sbmui,drawcursor)) hadd sbmui drawcursor $false
       else hadd sbmui drawcursor $true
@@ -1495,8 +1516,20 @@ alias -l drawControl {
       var %wh = $window(@sbm).dh
 
       if ($hget(sbmui,resize)) {
+        var %wx = 0
+        var %wy = 0
         var %oww = $hget(sbmui,originalWidth)
         var %owh = $hget(sbmui,originalHeight)
+        var %parent = $hget(sbmui,$+($1,_parent))
+
+        if (%parent) {
+          %wx = $hget(sbmui,$+(%parent,_x))
+          %wy = $hget(sbmui,$+(%parent,_y))
+          %ww = $hget(sbmui,$+(%parent,_w))
+          %wh = $hget(sbmui,$+(%parent,_h))
+          %oww = $hget(sbmui,$+(%parent,_ow))
+          %owh = $hget(sbmui,$+(%parent,_oh))
+        }
 
         var %ox = $hget(sbmui,$+($1,_ox))
         var %oy = $hget(sbmui,$+($1,_oy))
@@ -1506,9 +1539,9 @@ alias -l drawControl {
 
         var %scale = $calc(1 / $max($calc(%oww / %ww),$calc(%owh / %wh)))
 
-        if (%style == relative) {
-          %x = $calc((%ox / %oww) * %ww)
-          %y = $calc((%oy / %owh) * %wh)
+        if (%style == relative) {          
+          %x = $calc((%ox / %oww) * %ww + %wx)
+          %y = $calc((%oy / %owh) * %wh + %wy)
           %w = $calc((%ow / %oww) * %ww)
           %h = $calc((%oh / %owh) * %wh)
 
@@ -1533,8 +1566,8 @@ alias -l drawControl {
           var %rw = $calc((%ow / %oww) * %ww)
           var %rh = $calc((%oh / %owh) * %wh)
 
-          %x = $calc((%rw - %w) / 2 + %x)
-          %y = $calc((%rh - %h) / 2 + %y)
+          %x = $calc((%rw - %w) / 2 + %x + %wx)
+          %y = $calc((%rh - %h) / 2 + %y + %wy)
 
           if (text isin %type) {
             %size = $calc(%osize * %scale)
@@ -1560,6 +1593,8 @@ alias -l drawControl {
           %y = $calc(((%oy + %oh) / %owh) * %wh - %oh)
         }
 
+        if (%size < 0) %size = 0
+
         hadd sbmui $+($1,_x) %x
         hadd sbmui $+($1,_y) %y
         hadd sbmui $+($1,_w) %w
@@ -1576,7 +1611,7 @@ alias -l drawControl {
 
       drawtext -nr @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
     }
-    if (%type == text) drawtext -nr @sbm $hget(sbmoptions,colornormal) %font %size %x %y $hget(sbmui,$+($1,_text))
+    if (%type == text) drawtext -npr @sbm $iif($hget(sbmui,$+($1,_forecolor)),$v1,$hget(sbmoptions,colornormal)) %font %size %x %y $hget(sbmui,$+($1,_text))
     elseif (%type == logo) drawpic -cstn @sbm 16777215 %x %y %w %h $qt($scriptdirassets\logo.png)
     elseif (%type == edit) {
       drawrect -dfrn @sbm $hget(sbmui,$+($1,_bg)) 1 %x %y %w %h %i %e
@@ -1611,8 +1646,22 @@ alias -l drawControl {
 
       if ($hget(sbmui,$+($1,_thumb))) drawrect -rfn @sbm 16777215 1 %x $calc(%y + $hget(sbmui,$+($1,_thumb_position))) %w $v1
     }
+    elseif (%type == sprite) {
+      tokenize 32 $hget(sbmui,$+($1,_text))
+
+      drawpic -nst @sbm $1 %x %y %w %h $2-
+    }
+    elseif (%type == play_text) {
+      var %color = $hget(sbmoptions,colorplay)
+
+      if ($1 == $hget(sbmui,mouseInControl)) %color = $hget(sbmoptions,colorhoverplay)
+      if ($hget(sbmui,$+($1,_disabled))) %color = 13816530
+
+      drawtext -rpn @sbm %color %font %size %x %y $hget(sbmui,$+($1,_text))
+    }
+
+    ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
   }
-  ;drawrect -rn @sbm $rgb(220,220,220) 1 %x %y %w %h
 }
 
 /**
@@ -1932,6 +1981,67 @@ alias -l view {
   }
   elseif ($1 == lobby) {
     hadd sbmui focus chat
+    var %text = $chr(8592) Leave
+    var %font = "segoe ui symbol"
+    var %size = 20
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 10
+    var %y = 5
+
+    addControl menu_text back %x %y %w %h %font %size static %text
+
+    var %text = Start
+    var %font = "segoe ui symbol"
+    var %size = 35
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 350
+    var %y = 20
+
+    addControl text start %x %y %w %h %font %size fixed %text
+    
+    var %text = Waiting for the game to start...
+    var %font = "segoe ui symbol"
+    var %size = 25
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 220
+    var %y = 100
+
+    addControl text message %x %y %w %h %font %size fixed %text
+
+    addControl wrapper menu 0 0 800 400 null null static
+    addControl sprite white 80 200 32 32 null null fixed 16777215 640 108 16 16 $qt($scriptdirassets\sbm.png)
+    addControl sprite black 280 200 32 32 null null fixed 16777215 656 108 16 16 $qt($scriptdirassets\sbm.png)
+    addControl sprite orange 480 200 32 32 null null fixed 16777215 672 108 16 16 $qt($scriptdirassets\sbm.png)
+    addControl sprite blue 680 200 32 32 null null fixed 16777215 688 108 16 16 $qt($scriptdirassets\sbm.png)
+
+    var %text = Play
+    var %font = "segoe ui symbol"
+    var %size = 14
+    var %w = $width(%text,%font,%size)
+    var %h = $height(%text,%font,%size)
+    var %x = 81
+    var %y = 235
+
+    addControl play_text select_white %x %y %w %h %font %size fixed %text
+    addControl play_text select_black 281 %y %w %h %font %size fixed %text
+    addControl play_text select_orange 481 %y %w %h %font %size fixed %text
+    addControl play_text select_blue 681 %y %w %h %font %size fixed %text
+
+    hadd sbmui menu_hidden $true
+    hadd sbmui start_hidden $true
+    hadd sbmui start_parent menu
+    hadd sbmui message_parent menu
+    hadd sbmui white_parent menu
+    hadd sbmui black_parent menu
+    hadd sbmui orange_parent menu
+    hadd sbmui blue_parent menu
+    hadd sbmui select_white_parent menu
+    hadd sbmui select_black_parent menu
+    hadd sbmui select_orange_parent menu
+    hadd sbmui select_blue_parent menu
 
     addcontrol chat display 0 400 785 160 "segoe ui symbol" 11 static
     addcontrol elevator up 785 400 15 20 "segoe ui symbol" 14 static $chr(9650)
