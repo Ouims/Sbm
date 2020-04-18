@@ -2,7 +2,12 @@ on *:close:@sbm: {
   hfree sbm
   hfree sbmui
   hfree -w sbm*history
-  .timersbm off   
+  hfree -w sbmmap
+  hfree -w sbmoptions
+  hfree sbmchat
+  .timersbm off
+  sockclose sbmclient
+  if ($hget(sbmserv)) sbmserv stop
 }
 
 menu @sbm {
@@ -13,71 +18,104 @@ menu @sbm {
 
     var %focus = $hget(sbmui,focus)
 
-    if ($mouse.key & 1) && ($hget(sbmui,$+(%focus,_type)) == edit) && ($hget(sbmui,mouseInControl) == %focus) {
-      var %c $click(@sbm,$click(@sbm,0)).x
+    if ($mouse.key & 1) {
+      var %in_mouse = $hget(sbmui,mouseInControl)
 
-      if ($mouse.x <= %c) {
-        var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $left($hget(sbmui,$+(%focus,_text)),%p)
-        while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc(%c - $mouse.x)) {
-          inc %a
+      if ($hget(sbmui,$+(%focus,_type)) == edit) && (%in_mouse == %focus) {
+        var %c $click(@sbm,$click(@sbm,0)).x
+
+        if ($mouse.x <= %c) {
+          var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $left($hget(sbmui,$+(%focus,_text)),%p)
+          while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc(%c - $mouse.x)) {
+            inc %a
+          }
+          if (%a != 1) {
+            hadd sbmui $+(%focus,_sel) $calc(%p - %a + 1) %p
+          }
         }
-        if (%a != 1) {
-          hadd sbmui $+(%focus,_sel) $calc(%p - %a + 1) %p
+        else {
+          var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
+          while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc($mouse.x - %c)) {
+            inc %a
+          }
+          if (%a != 1) {
+            hadd sbmui $+(%focus,_sel) %p $calc(%p + %a -1)
+          }
         }
       }
-      else {
-        var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
-        while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc($mouse.x - %c)) {
-          inc %a
-        }
-        if (%a != 1) {
-          hadd sbmui $+(%focus,_sel) %p $calc(%p + %a -1)
-        }
+      elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmchat,0).item) {
+        hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $v1),0)
+        hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
       }
     }
   }
-  leave: hadd sbmui mouseInControl $null
+  leave: {
+    hadd sbmui mouseInControl $null
+    hadd sbmui scroll_thumb_active $false
+  }
   sclick: {
     if ($hget(sbmui,mouseInControl)) {
-      var %active = $v1
+      var %in_mouse = $v1
       var %view = $hget(sbm,view)
 
-      if ($hget(sbmui,$+(%active,_type)) == edit) {
-        hadd sbmui focus %active
+      if ($hget(sbmui,$+(%in_mouse,_type)) == edit) {
+        hadd sbmui focus %in_mouse
         hadd sbmui drawcursor $true
-        hdel sbmui $+(%active,_sel)
+        hdel sbmui $+(%in_mouse,_sel)
 
-        if ($hget(sbmui,$+(%active,_text)) != $null) {
+        if ($hget(sbmui,$+(%in_mouse,_text)) != $null) {
           var -p %t = $v1
-          var %x = $hget(sbmui,$+(%active,_x))
+          var %x = $hget(sbmui,$+(%in_mouse,_x))
 
-          if ($mouse.x <= $calc(%x + 10)) hadd sbmui $+(%active,_cursor) 0
-          elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_fontsize))))) hadd sbmui $+(%active,_cursor) $len(%t)
+          if ($mouse.x <= $calc(%x + 10)) hadd sbmui $+(%in_mouse,_cursor) 0
+          elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%in_mouse,_font)),$hget(sbmui,$+(%in_mouse,_fontsize))))) hadd sbmui $+(%in_mouse,_cursor) $len(%t)
           else {
             var %a 1
-            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%active,_font)),$hget(sbmui,$+(%active,_fontsize)))) <= $mouse.x) {
+            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%in_mouse,_font)),$hget(sbmui,$+(%in_mouse,_fontsize)))) <= $mouse.x) {
               inc %a
             }
 
-            hadd sbmui $+(%active,_cursor) $calc(%a - 1)
+            hadd sbmui $+(%in_mouse,_cursor) $calc(%a - 1)
           }
         }
       }
 
       if (%view == menu) {
-        if (%active == connect) view connect
-        elseif (%active == create) view create
+        if (%in_mouse == connect) view connect
+        elseif (%in_mouse == create) view create
       }
       elseif (%view == connect) {
-        if (%active == back) view menu
-        elseif (%active == connect) && (!$hget(sbmui,connect_disabled)) {
+        if (%in_mouse == back) view menu
+        elseif (%in_mouse == connect) && (!$hget(sbmui,connect_disabled)) {
           sbmclientconnect $hget(sbmui,server_text) $hget(sbmui,port_text) $hget(sbmui,nick_text)
         }
       }
       elseif (%view == create) {
-        if (%active == back) view menu
+        if (%in_mouse == back) view menu
+        elseif (%in_mouse == connect) && (!$hget(sbmui,connect_disabled)) {
+          sbmserv $hget(sbmui,port_text) restart
+          sbmclientconnect 127.0.0.1 $hget(sbmui,port_text) $hget(sbmui,nick_text)
+        }
+      }
+      elseif (%view == lobby) {
+        if (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
+          hdec sbmui display_current
+          hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
+        }
+        elseif (%in_mouse == scroll) {
+          hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $hget(sbmchat,0).item),0)
+          hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
+          hadd sbmui scroll_thumb_active $true
+        }
+        elseif (%in_mouse == down) && ($hget(sbmui,display_current) < $hget(sbmchat,0).item) {
+          hinc sbmui display_current
+          hinc sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
+        }
       }
     }
+  }
+  uclick: {
+    hadd sbmui scroll_thumb_active $false
   }
 }
 
@@ -254,9 +292,17 @@ on *:keydown:@sbm:*: {
 
         var %f $findtok(%l,%focus,32)
 
-        dec %f
+        ; if shift is hold
+        if ($mouse.key & 4) {
+          inc %f
 
-        if (%f == 0) %f = $numtok(%l,32)
+          if (%f > $numtok(%l,32)) %f = 1
+        }
+        else {
+          dec %f
+
+          if (%f == 0) %f = $numtok(%l,32)
+        }
 
         hdel sbmui $+(%focus,_sel)
         hadd sbmui focus $gettok(%l,%f,32)
@@ -400,14 +446,14 @@ on *:keydown:@sbm:*: {
     elseif ($keyval == 13) || ($keyval == 10) {
       if (%focus == chat) {
         sockwrite -n sbmclient TEXT $$hget(sbmui,$+(%focus,_text))
-        if (!$hget(sbmui,$+(%focus,_history))) hadd -m %focus $+ history $calc($hget(%focus $+ history,0).item + 1) $hget(sbmui,$+(%focus,_text))
+        if (!$hget(sbmui,$+(%focus,_history))) hadd -m $+(sbm,%focus,history) $calc($hget($+(sbm,%focus,history),0).item + 1) $hget(sbmui,$+(%focus,_text))
         hadd sbmui $+(%focus,_history) 0
         hdel sbmui $+(%focus,_sel)
-        hadd sbmui $+(%focus,_editbox)
+        hadd sbmui $+(%focus,_text)
         hadd sbmui $+(%focus,_cursor) 0
       }
       elseif ($hget(sbmui,connect_disabled) != $null) && ($hget(sbmui,connect_disabled) == $false) {
-        if ($hget(sbmui,view) == create) {
+        if ($hget(sbm,view) == create) {
           if ($hget(sbmserv)) return
           sbmserv $hget(sbmui,port_text) restart
           sbmclientconnect 127.0.0.1 $hget(sbmui,port_text) $hget(sbmui,nick_text)
@@ -440,6 +486,14 @@ on *:keydown:@sbm:*: {
       if ($hget(sbmui,$+(%focus,_sel))) {
         tokenize 32 $v1
         clipboard $mid(%t,$calc($1 + 1),$calc($2 - $1))
+      }
+    }
+
+    if ($hget(sbm,view) == lobby) {
+      if ($keyval != 9) {
+        hdel sbm tabc
+        hdel sbm tabcomp
+        hdel sbm tabcompold
       }
     }
   }

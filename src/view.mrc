@@ -11,8 +11,6 @@ alias -l view {
   var %ww = $hget(sbmui,originalWidth)
   var %wh = $hget(sbmui,originalHeight)
 
-  hadd sbm view $1
-
   hdel -w sbmui *_*
   hadd sbmui mouseInControl $null
   hadd sbmui focus $null
@@ -97,8 +95,6 @@ alias -l view {
 
     addControl edit server %x %y %w %h %font %size absolute_top_left
 
-    hadd sbmui server_bg 8355711
-
     var %text = Server Port
     var %font = "segoe ui symbol"
     var %size = 25
@@ -117,8 +113,6 @@ alias -l view {
     var %y = 352
 
     addControl edit port %x %y %w %h %font %size absolute_top_left
-
-    hadd sbmui port_bg 8355711
 
     var %text = Nickname
     var %font = "segoe ui symbol"
@@ -142,8 +136,6 @@ alias -l view {
     hadd sbmui nick_cursor $len($me)
 
     if ($len($me)) hadd sbmui nick_sel 0 $len($me)
-
-    hadd sbmui nick_bg 8355711
 
     var %text = Connect
     var %font = "segoe ui symbol"
@@ -200,6 +192,7 @@ alias -l view {
     var %y = 272
 
     ;addControl edit server %x %y %w %h %font %size absolute_top_left
+    hadd sbmui server_text 127.0.0.1
 
     var %text = Server Port
     var %font = "segoe ui symbol"
@@ -218,9 +211,10 @@ alias -l view {
     var %x = 380
     var %y = 352
 
-    addControl edit port %x %y %w %h %font %size absolute_top_left
+    addControl edit port %x %y %w %h %font %size absolute_top_left 8000
 
-    hadd sbmui port_bg 8355711
+    hadd sbmui port_cursor 4
+    hadd sbmui port_sel 0 4
 
     var %text = Nickname
     var %font = "segoe ui symbol"
@@ -245,8 +239,6 @@ alias -l view {
 
     if ($len($me)) hadd sbmui nick_sel 0 $len($me)
 
-    hadd sbmui nick_bg 8355711
-
     var %text = Start
     var %font = "segoe ui symbol"
     var %size = 28
@@ -256,11 +248,25 @@ alias -l view {
     var %y = 500
 
     addControl menu_text connect %x %y %w %h %font %size absolute_top_left %text
-    
+
+    hadd sbmui connect_disabled $true
   }
   elseif ($1 == options) {
 
   }
+  elseif ($1 == lobby) {
+    hadd sbmui focus chat
+
+    addcontrol chat display 0 400 785 160 "segoe ui symbol" 11 static
+    addcontrol elevator up 785 400 15 20 "segoe ui symbol" 14 static $chr(9650)
+    addcontrol scroll scroll 785 425 15 115 "segoe ui symbol" 14 static
+    addcontrol elevator down 785 540 15 20 "segoe ui symbol" 14 static $chr(9660)
+    addControl edit chat 5 570 760 25 15 15 "segoe ui symbol" 15 static
+
+    hadd sbmui display_current 0
+  }
+
+  hadd sbm view $1
 
   hadd sbmui currentWidth 800
   hadd sbmui currentHeight 600

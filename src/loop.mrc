@@ -16,13 +16,69 @@ alias -l loop {
 
     hadd sbmui currentWidth %ww
     hadd sbmui currentHeight %wh
+
+    if ($hget(sbm,view) == lobby) {
+      if (%wh > 480) {
+        hdel sbmui display_hidden $false
+        hdel sbmui up_hidden $false
+        hdel sbmui scroll_hidden $false
+        hdel sbmui down_hidden $false
+        hdel sbmui chat_hidden $false
+
+        hadd sbmui display_w $calc(%ww - 15)
+        hadd sbmui display_h $calc(%wh - 440)
+        hadd sbmui up_x $calc(%ww - 15)
+        hadd sbmui scroll_x $calc(%ww - 15)
+        hadd sbmui scroll_h $calc($hget(sbmui,display_h) - 45)
+        hadd sbmui down_x $calc(%ww - 15)
+        hadd sbmui down_y $calc(%wh - 60)
+        hadd sbmui chat_y $calc(%wh - 30)
+        hadd sbmui chat_w $calc(%ww - 40)
+
+        resizeChatThumb
+      }
+      else {
+        hadd sbmui display_hidden $true
+        hadd sbmui up_hidden $true
+        hadd sbmui scroll_hidden $true
+        hadd sbmui down_hidden $true
+        hadd sbmui chat_hidden $true
+      }
+    }
   }
 
-  if ($hget(sbm,view) == connect) {
+  if ($hget(sbmui,connect_type) == menu_text) && ($hget(sbm,view) != menu) {
     hadd sbmui connect_disabled $true
 
     if ($iptype($hget(sbmui,server_text)) != $null) && ($regex($hget(sbmui,port_text),$sbmreg_validport)) && ($hget(sbmui,nick_text) != $null) {
       hadd sbmui connect_disabled $false
+    }
+  }
+
+  if ($hget(sbm,view) == lobby) {    
+    var %lines = $hget(sbmchat,0).item
+
+    if (%lines) && (!$hget(sbmui,display_hidden)) {
+      var %dy = $hget(sbmui,display_y)
+      var %x = 2
+      var %line = $hget(sbmui,display_current)
+      var %y = $calc(%dy + $hget(sbmui,display_h) - 18)
+      var %font = $hget(sbmui,display_font)
+      var %fontsize = $hget(sbmui,display_fontsize)
+
+      while (%y > %dy) && ($hget(sbmchat,%line)) {
+        var -p %t = $v1
+        if ($gettok($v1,2,32) == *) {
+          drawtext -rnp @sbm $hget(sbmoptions,colorchatinfos) %font %fontsize %x %y $+($chr(2),%t)
+        }
+        else {
+          drawtext -rnp @sbm 0 %font %fontsize %x %y $+($chr(2),$gettok(%t,1,32))
+          drawtext -rnp @sbm 0 %font %fontsize $calc(160 - $width($+($chr(2),$gettok(%t,2,32)),%font,%fontsize)) %y $+($chr(2),$gettok(%t,2,32))
+          drawtext -rnp @sbm 0 %font %fontsize 170 %y $+($chr(2),$gettok(%t,3-,32))
+        }
+        dec %y 18
+        dec %line
+      }
     }
   }
 

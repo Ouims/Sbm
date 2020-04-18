@@ -87,3 +87,7 @@ alias -l align {
 
   return $3
 }
+
+alias Lum tokenize 44 $rgb($1) | return $calc(0.2126 * $brightness($1) + 0.7152 * $brightness($2) + 0.0722* $brightness($3))
+alias brightness var %res = $1 / 255 | return $iif(%res <= 0.03928, $calc(%res / 12.92), $calc((( %res + 0.055) / 1.055) ^ 2.4))
+alias contrast tokenize 32 $sorttok($Lum($1) $Lum($2),32,nr) | return $calc( ($1 + 0.05) / ($2 + 0.05) )
