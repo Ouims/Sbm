@@ -283,19 +283,33 @@ alias sbmaddtext {
 */
 alias sbmresizechatthumb {
   var %lines = $hget(sbmchat,0).item
-  if (%lines) {
-    var %height = $hget(sbmui,display_h)
-    var %scroll = $hget(sbmui,scroll_h)
-    var %viewing = $calc(%height / 18)
-    var %lines = $calc(%lines + %viewing)
+  var %height = $hget(sbmui,display_h)
+  var %scroll = $hget(sbmui,scroll_h)
+  var %viewing = $int($calc(%height / 18))
+  var %current = $hget(sbmui,display_current)
+
+  hadd sbmui scroll_thumb 0
+
+  if (%lines > %viewing) {
+    if (%current != %lines) && (%current < %viewing) && ($calc((%current - %viewing) * -1) > 0) {
+      hinc sbmui display_current $v1
+      inc %current $v1
+    }
+
     var %content = $calc(%lines * 18)
-    var %visible = $calc(%height / %content)
+    var %visible = $calc((%viewing * 18) / %content)
     var %thumb = $calc(%scroll * %visible)
     var %jump = $calc((%scroll - %thumb) / (%lines - %viewing))
 
+    hadd sbmui scroll_thumb_hidden $false
     hadd sbmui scroll_thumb %thumb
     hadd sbmui scroll_thumb_jump %jump
-    hadd sbmui scroll_thumb_position $calc(%jump * $hget(sbmui,display_current))
+    hadd sbmui scroll_thumb_position $calc(%jump * ($hget(sbmui,display_current) - %viewing))
   }
-  else hdel -w scroll_thumb*
+  elseif (%current != %lines) && (%current < %viewing) && ($calc((%current - %viewing) * -1) > 0) {
+    hinc sbmui display_current $v1
+    inc %current $v1
+  }
+
+  if (%lines === 0) hdel -w scroll_thumb*
 }
