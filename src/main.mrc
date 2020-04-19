@@ -8,7 +8,7 @@
 *
 */
 alias sbm {
-  if ($window(@sbm)) window -a sbm
+  if ($window(@sbm)) window -a @sbm
   else {
     if ($exists($scriptdirsbm.sbm)) hload -m sbmoptions $qt($scriptdirsbm.sbm)
     else .hmake sbmoptions

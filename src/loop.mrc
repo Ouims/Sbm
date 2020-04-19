@@ -75,6 +75,41 @@ alias sbmloop {
       hadd sbmui start_forecolor $gettok(64 92 127 168 255,$hget(sbm,startflash),32)
     }
 
+    var %p = $hget(sbm,player1) $hget(sbm,player2) $hget(sbm,player3) $hget(sbm,player4)
+
+    if ($hget(sbm,player1) != $null) {
+      hadd sbmui select_white_text $v1
+      hadd sbmui select_white_disabled $true
+    }
+    else {
+      hadd sbmui select_white_text $+($chr(31),Play)
+      hadd sbmui select_white_disabled $istok(%p,$hget(sbm,nick),32)
+    }
+    if ($hget(sbm,player2) != $null) {
+      hadd sbmui select_black_text $v1
+      hadd sbmui select_black_disabled $true
+    }
+    else {
+      hadd sbmui select_black_text $+($chr(31),Play)
+      hadd sbmui select_black_disabled $istok(%p,$hget(sbm,nick),32)
+    }
+    if ($hget(sbm,player3) != $null) {
+      hadd sbmui select_orange_text $v1
+      hadd sbmui select_orange_disabled $true
+    }
+    else {
+      hadd sbmui select_orange_text $+($chr(31),Play)
+      hadd sbmui select_orange_disabled $istok(%p,$hget(sbm,nick),32)
+    }
+    if ($hget(sbm,player4) != $null) {
+      hadd sbmui select_blue_text $v1
+      hadd sbmui select_blue_disabled $true
+    }
+    else {
+      hadd sbmui select_blue_text $+($chr(31),Play)
+      hadd sbmui select_blue_disabled $istok(%p,$hget(sbm,nick),32)
+    }
+
     var %lines = $hget(sbmchat,0).item
 
     if (%lines) && (!$hget(sbmui,display_hidden)) {

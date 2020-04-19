@@ -101,9 +101,11 @@ menu @sbm {
       }
       elseif (%view == lobby) {
         if (%in_mouse == back) sbmchangeview menu
-        elseif (%in_mouse == start) {
-          sockwrite -n sbmclient ready
-        }
+        elseif (%in_mouse == start) sockwrite -n sbmclient ready
+        elseif (%in_mouse == select_white) && (!$hget(sbmui,select_white_disabled)) sockwrite -n sbmclient slpl 1 1
+        elseif (%in_mouse == select_black) && (!$hget(sbmui,select_black_disabled)) sockwrite -n sbmclient slpl 2 1
+        elseif (%in_mouse == select_orange) && (!$hget(sbmui,select_orange_disabled)) sockwrite -n sbmclient slpl 3 1
+        elseif (%in_mouse == select_blue) && (!$hget(sbmui,select_blue_disabled)) sockwrite -n sbmclient slpl 4 1
         elseif (%in_mouse == up) && ($hget(sbmui,display_current) > 0) {
           hdec sbmui display_current
           hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)

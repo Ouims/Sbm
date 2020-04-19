@@ -91,7 +91,7 @@ on *:sockread:sbmclient:{
       sbmaddtext $+([,$asctime($2,HH:nn:ss),]) $+(<,$3,>) $4-
       if ($hget(sbmoptions,flashonhl)) && ($3 != $hget(sbm,nick)) && ($regex($4-,/(?:\B@|\b)\Q $+ $replacecs($hget(sbm,nick),\E,\E\\E\Q) $+ \E\b/Si)) flash @sbm
     }
-    elseif ($1 == player) {
+    elseif ($1 == player) { echo -s here $2-
       hadd sbm player $+ $2-
     }
   }
