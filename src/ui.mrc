@@ -263,13 +263,222 @@ alias sbmcooincontrol {
 }
 
 alias sbmaddtext {
-  var %i = $hget(sbmchat,0).item
+  var %item = $calc($hfind(sbmchat,/(?<!_)\d+(?!_)/,0,r) + 1)
 
-  hadd -m sbmchat $calc(%i + 1) $1-
+  hadd -m sbmchat %item $1-
 
-  if (%i == $hget(sbmui,display_current)) hinc sbmui display_current
+  if (!$hget(sbmui,display_current)) {
+    hadd sbmui display_current_id 0
+    hadd sbmui display_wrapped 0 0
+  }
+
+  if ($calc(%item - 1) == $gettok($hget(sbmui,display_current_id),1,95)) sbmscroll down $true
+  else sbmresizechatthumb
+}
+
+/**
+*
+* Gets the previous or next visible line id of the specified line.
+*
+* @identifier $sbmgetchatline
+*
+* @param <line>  the line of reference
+*
+* @prop next  will return the next visible line
+* @prop prev  will return the previous visible line
+*
+* @returns  the id of a visible line or $null if none
+*
+* @global
+*
+*/
+alias sbmgetchatline {
+  var %line = $1
+  var %num = $gettok(%line,1,95)
+  var %num_e = $gettok(%line,2,95)
+
+  if ($prop == prev) {
+    if (%num_e) {
+      dec %num_e
+
+      if (%num_e == 1) %num_e = $null
+    }
+    else {
+      %num_e = $null
+
+      dec %num
+
+      if (%num) {
+        var %num_l = $hfind(sbmchat,$+(%num,_*),0,w)
+
+        if (%num_l) %num_e = $calc(%num_l + 1)
+      }
+    }
+  }
+  elseif ($prop == next) {
+    if (%num_e) inc %num_e
+    else %num_e = 2
+
+    if (!$hget(sbmchat,$+(%num,_,%num_e))) {
+      %num_e = $null
+
+      inc %num
+    }
+  }
+
+  %line = $+(%num,$iif(%num_e,$+(_,%num_e)))
+
+  return $iif($hget(sbmchat,%line),%line,$null)
+}
+
+/**
+*
+* Scrolls the chat display.
+*
+* @command /sbmscroll
+*
+* @param <direction>  up to scroll up, down to scroll down
+* @param [absolute]   $true if the core line should be show, $false otherwise
+*
+* @global
+*
+*/
+alias sbmscroll {
+  var %bounds = $hget(sbmui,display_wrapped)
+
+  if ($1 == down) && ($hget(sbmui,display_current) < $hget(sbmchat,0).item) {
+    var %line = $sbmgetchatline($hget(sbmui,display_current_id)).next
+
+    if (%line) {
+      var %wrapped = $hget(sbmui,display_wrapped)
+
+      if ($gettok(%line,1,95) > $gettok(%wrapped,2,32)) {
+        hadd sbmui display_wrapped $gettok(%wrapped,1,32) $calc($v2 + 1)
+
+        var %lines = $sbmwrapline(%line)
+
+        if ($2) {
+          hinc sbmui display_current %lines
+
+          if (%lines > 1) hadd sbmui display_current_id $+(%line,_,%lines)
+          else hadd sbmui display_current_id %line
+        }
+        else {
+          hinc sbmui display_current
+          hadd sbmui display_current_id %line
+        }
+      }
+      else {
+        hinc sbmui display_current
+        hadd sbmui display_current_id %line
+
+        hinc sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
+      }
+    }
+  }
+  elseif ($1 == up) && ($hget(sbmui,display_current) > $calc($hget(sbmui,display_h) / 18)) {
+    var %line = $sbmgetchatline($hget(sbmui,display_current_id)).prev
+
+    if (%line) {
+      var %wrapped = $hget(sbmui,display_wrapped)
+
+      if ($gettok(%line,1,95) < $gettok(%wrapped,1,32)) {
+        hadd sbmui display_wrapped $calc($v2 - 1) $gettok(%wrapped,2,32)
+
+        var %lines = $sbmwrapline(%line)
+
+        if ($2) {
+          hdec sbmui display_current %lines
+
+          hadd sbmui display_current_id %line
+        }
+        else {
+          hdec sbmui display_current
+          hadd sbmui display_current_id $+(%line,_,%lines)
+        }
+      }
+      else {
+        hdec sbmui display_current
+        hadd sbmui display_current_id %line
+        hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
+      }
+    }
+  }
 
   sbmresizechatthumb
+}
+
+/**
+*
+* Wraps a given line.
+*
+* @identifier $sbmwrapline
+*
+* @param <id>  the id of the line to be wrapped
+*
+* @returns  the number of lines the line was wrapped into
+*
+* @global
+*
+*/
+alias sbmwrapline {
+  var -p %text = $+($chr(2),$gettok($hget(sbmchat,$1),3-,32))
+  var %font = $hget(sbmui,display_font)
+  var %fontsize = $hget(sbmui,display_fontsize)
+  var %width = $calc($hget(sbmui,display_w) - 170)
+  var %width = $calc($hget(sbmui,display_w) - 300)
+  var %lines = $wrap(%text,%font,%fontsize,%width,0,0)
+  var %current_line = %lines
+
+  while (%current_line > 1) {
+    hadd sbmchat $+($1,_,%current_line) null null $wrap(%text,%font,%fontsize,%width,1,%current_line)
+
+    dec %current_line
+  }
+
+  return %lines
+}
+
+/**
+*
+* Resizes chat lines.
+*
+* @command /sbmresizechat
+*
+* @global
+*
+*/
+alias sbmresizechat {
+  if ($hget(sbmchat,0).item) {
+    hadd sbmui display_current $gettok($hget(sbmui,display_current_id),1,95)
+
+    hdel -w sbmchat *_*
+    var %visible = $calc($hget(sbmui,display_h) / 18)
+    var %line = $hget(sbmui,display_current)
+    var %added = 0
+
+    var %lines = $sbmwrapline(%line)
+
+    inc %added $calc(%lines - 1)
+    hadd sbmui display_current_id $iif(%lines > 1,$+(%line,_,%lines),%line)
+
+    dec %line
+    dec %visible %lines
+
+    while (%visible > 0) && (%line > 0) {
+      var %lines = $sbmwrapline(%line)
+
+      inc %added $calc(%lines - 1)
+
+      dec %line
+      dec %visible %lines
+    }
+
+    echo -s hinc sbmui display_current %added
+    hinc sbmui display_current %added
+
+    sbmresizechatthumb
+  }
 }
 
 /**
@@ -306,7 +515,7 @@ alias sbmresizechatthumb {
     hadd sbmui scroll_thumb_jump %jump
     hadd sbmui scroll_thumb_position $calc(%jump * ($hget(sbmui,display_current) - %viewing))
   }
-  elseif (%current != %lines) && (%current < %viewing) && ($calc((%current - %viewing) * -1) > 0) {
+  elseif (%current) && (%current != %lines) && (%current < %viewing) && ($calc((%current - %viewing) * -1) > 0) {
     hinc sbmui display_current $v1
     inc %current $v1
   }

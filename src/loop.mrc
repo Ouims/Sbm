@@ -30,7 +30,8 @@ alias sbmloop {
       }
       if (%wh < 400) hadd sbmui menu_h $v1
 
-      if (%wh > 480) && (%ww > 200) {
+      if (%wh > 480) && (%ww > 400) {
+        hadd sbmui display_resize $true
         hdel sbmui display_hidden $false
         hdel sbmui up_hidden $false
         hdel sbmui scroll_hidden $false
@@ -47,7 +48,7 @@ alias sbmloop {
         hadd sbmui chat_y $calc(%wh - 30)
         hadd sbmui chat_w $calc(%ww - 40)
 
-        sbmresizechatthumb
+        sbmresizechat
       }
       else {
         hadd sbmui display_hidden $true
@@ -115,23 +116,27 @@ alias sbmloop {
     if (%lines) && (!$hget(sbmui,display_hidden)) {
       var %dy = $hget(sbmui,display_y)
       var %x = 2
-      var %line = $hget(sbmui,display_current)
+      var %line = $hget(sbmui,display_current_id)
       var %y = $calc(%dy + $hget(sbmui,display_h) - 18)
       var %font = $hget(sbmui,display_font)
       var %fontsize = $hget(sbmui,display_fontsize)
+      var %width = $calc($hget(sbmui,display_w) - 170)
+      var %width = $calc($hget(sbmui,display_w) - 300)
 
-      while (%y > %dy) && ($hget(sbmchat,%line)) {
-        var -p %t = $v1
-        if ($gettok($v1,2,32) == *) {
-          drawtext -rnp @sbm $hget(sbmoptions,colorchatinfos) %font %fontsize %x %y $+($chr(2),%t)
-        }
-        else {
-          drawtext -rnp @sbm 0 %font %fontsize %x %y $+($chr(2),$gettok(%t,1,32))
-          drawtext -rnp @sbm 0 %font %fontsize $calc(160 - $width($+($chr(2),$gettok(%t,2,32)),%font,%fontsize)) %y $+($chr(2),$gettok(%t,2,32))
-          drawtext -rnp @sbm 0 %font %fontsize 170 %y $+($chr(2),$gettok(%t,3-,32))
-        }
+      while (%y > %dy) && (%line) && ($hget(sbmchat,%line)) {
+        tokenize 32 $v1
+        
+        var %color = 0
+
+        if ($2 == *) %color = $hget(sbmoptions,colorchatinfos)
+
+        if ($1 != null) drawtext -rnp @sbm %color %font %fontsize %x %y $+($chr(2),$1)
+        if ($2 != null) drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) %y $+($chr(2),$2)
+        drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),%font,%fontsize,%width,0,1)
+
         dec %y 18
-        dec %line
+
+        %line = $sbmgetchatline(%line).prev
       }
     }
   }

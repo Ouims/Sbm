@@ -46,8 +46,12 @@ menu @sbm {
         }
       }
       elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmchat,0).item) {
+        /*
+        this has to be changed to a move towards said line instead of directly moving into said position because of the wrapping thing
+
         hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $v1),0)
         hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
+        */
       }
     }
   }
@@ -106,19 +110,17 @@ menu @sbm {
         elseif (%in_mouse == select_black) && (!$hget(sbmui,select_black_disabled)) sockwrite -n sbmclient slpl 2 1
         elseif (%in_mouse == select_orange) && (!$hget(sbmui,select_orange_disabled)) sockwrite -n sbmclient slpl 3 1
         elseif (%in_mouse == select_blue) && (!$hget(sbmui,select_blue_disabled)) sockwrite -n sbmclient slpl 4 1
-        elseif (%in_mouse == up) && ($hget(sbmui,display_current) > $calc($hget(sbmui,display_h) / 18)) {
-          hdec sbmui display_current
-          hdec sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
-        }
+        elseif (%in_mouse == up) sbmscroll up
         elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb)) {
+          /*
+          this has to be changed to a move towards said line instead of directly moving into said position because of the wrapping thing
+
           hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * ($hget(sbmchat,0).item - ($hget(sbmui,display_h) / 18))),0)
           hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
           hadd sbmui scroll_thumb_active $true
+          */
         }
-        elseif (%in_mouse == down) && ($hget(sbmui,display_current) < $hget(sbmchat,0).item) {
-          hinc sbmui display_current
-          hinc sbmui scroll_thumb_position $hget(sbmui,scroll_thumb_jump)
-        }
+        elseif (%in_mouse == down) sbmscroll down
       }
     }
   }
@@ -181,7 +183,7 @@ on *:keydown:@sbm:*: {
       }
     }
     ;control+v
-    elseif ($keyval == 22) {
+    elseif ($keyval == 22) || (($mouse.key & 2) && ($keyval == 86)) {
       if ($crlf !isin $cb) {
         if ($hget(sbmui,$+(%focus,_sel))) {
           tokenize 32 $v1
