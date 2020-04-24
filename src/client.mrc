@@ -73,7 +73,7 @@ on *:sockread:sbmclient:{
       window -pdBfCfh +l @sbmbuf -1 -1 800 400
       window -pdh @sbmtiles -1 -1 800 800
       drawsize @sbmtiles 1088 124
-      drawpic -c @sbmtiles 0 0 $qt($scriptdirsbm.png)
+      drawpic -c @sbmtiles 0 0 $qt($scriptdirassets\sbm.png)
       drawrect -fr @sbmbuf 3168272 0 0 0 800 400
       noop $hfind(sbmmap,*,0,w,sbmdrawmap $1)
       sbmchangeview game
@@ -116,9 +116,9 @@ alias sbmdelidsitems hadd sbm items $remtok($hget(sbm,items),$1,32) | hdel sbm i
 alias sbmdrawmap {
   var %h $hget(sbmmap,$1),%v $1
   tokenize 46 $1
-  if (%h == 3) drawpic -ct @sbmbuf 3168272 $calc($1 * 16 + 300) $calc($2 * 16) $calc(16 * 20) 16 16 16 $qt($scriptdirbbt.png)
+  if (%h == 3) drawpic -ct @sbmbuf 3168272 $calc($1 * 16 + 300) $calc($2 * 16) $calc(16 * 57) $calc(6 * 16) 16 16 $qt($scriptdirassets\sbm.png)
   elseif (%h == 1) {
-    drawpic -ct @sbmbuf 3168272 $calc($1 * 16 + 300) $calc($2 * 16) $calc(16 * 21) 16 16 16 $qt($scriptdirbbt.png)
-    if ($hget(sbmmap,$+($1,.,$calc($2 + 1))) == $null) && ($2 < $gettok($hget(sbmmap,mapsize),2,32)) drawpic -c @sbmbuf $calc($1 * 16 + 300) $calc($2 * 16 + 16) $calc(16 * 20) 0 16 16 $qt($scriptdirbbt.png)
+    drawpic -ct @sbmbuf 3168272 $calc($1 * 16 + 300) $calc($2 * 16) $calc(16 * 58) $calc(6 * 16) 16 16 $qt($scriptdirassets\sbm.png)
+    ;if ($hget(sbmmap,$+($1,.,$calc($2 + 1))) == $null) && ($2 < $gettok($hget(sbmmap,mapsize),2,32)) drawpic -c @sbmbuf $calc($1 * 16 + 300) $calc($2 * 16 + 16) $calc(16 * 58) $calc(6 * 16) 16 16 $qt($scriptdirassets\sbm.png)
   }
 }

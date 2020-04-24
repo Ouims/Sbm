@@ -42,9 +42,10 @@ alias sbm {
 
     window -pdBfCfo +l @sbm -1 -1 800 600
 
-    .hmake sbm
+    hmake sbm
     hmake sbmui 1
     
+    hadd sbm fpsticks $ticks
     hadd sbmui originalWidth 800
     hadd sbmui originalHeight 600
 

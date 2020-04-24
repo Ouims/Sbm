@@ -120,8 +120,8 @@ alias sbmloop {
       var %y = $calc(%dy + $hget(sbmui,display_h) - 18)
       var %font = $hget(sbmui,display_font)
       var %fontsize = $hget(sbmui,display_fontsize)
-      var %width = $calc($hget(sbmui,display_w) - 170)
-      var %width = $calc($hget(sbmui,display_w) - 300)
+      var %width = $calc($hget(sbmui,display_w) - 180)
+      ;var %width = $calc($hget(sbmui,display_w) - 300)
 
       while (%y > %dy) && (%line) && ($hget(sbmchat,%line)) {
         tokenize 32 $v1
@@ -132,7 +132,7 @@ alias sbmloop {
 
         if ($1 != null) drawtext -rnp @sbm %color %font %fontsize %x %y $+($chr(2),$1)
         if ($2 != null) drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) %y $+($chr(2),$2)
-        drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),%font,%fontsize,%width,0,1)
+        drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,1)
 
         dec %y 18
 
@@ -159,6 +159,29 @@ alias sbmloop {
       drawline -rn @sbm 0 1 $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 6) $calc($hget(sbmui,$+(%focus,_x)) + 10 + %x) $calc($hget(sbmui,$+(%focus,_y)) + 21)
     }
   }
+
+  if ($hget(sbm,view) == game) {
+    drawrect -frn @sbm 3168272 0 0 0 %ww %wh
+    tokenize 32 $hget(sbm,items)
+    ;sbmdrawitems $*
+    var %ratio 208 / 240
+    var %w $gettok($sorttok(%ww $calc(%wh / %ratio), 32, n), 1, 32),0), %h %ratio * %w
+    drawcopy -n @sbmbuf 300 0 240 208 @sbm $sbmalign(%ww,%w,0).center $sbmalign(%wh,%h,0).center %w %h
+    hinc sbm fpscount
+    if ($calc($ticks - $hget(sbm,ticksbonus)) > 50) {
+      if ($hget(sbm,bonustile)) hadd sbm bonustile 0
+      else hadd sbm bonustile 16
+      hadd sbm ticksbonus $ticks
+    }
+  }
+
+  if ($calc($ticks - $hget(sbm,fpsticks)) >= 1000) {
+    hadd sbm fps $hget(sbm,fpscount)
+    hadd sbm fpscount 0
+    hadd sbm fpsticks $ticks
+  }
+
+  titlebar @sbm fps $hget(sbm,fps)
 
   drawdot @sbm
 

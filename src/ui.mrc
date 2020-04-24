@@ -241,7 +241,7 @@ alias sbmdrawcontrol {
 *
 * Checks if a coordinate is within a UI control.
 *
-* @identifer $sbmcooincontrol
+* @identifier $sbmcooincontrol
 *
 * @param <id>        id of the control
 * @param <x>         x position of coordinate
@@ -423,10 +423,10 @@ alias sbmscroll {
 */
 alias sbmwrapline {
   var -p %text = $+($chr(2),$gettok($hget(sbmchat,$1),3-,32))
-  var %font = $hget(sbmui,display_font)
+  var %font = $noqt($hget(sbmui,display_font))
   var %fontsize = $hget(sbmui,display_fontsize)
-  var %width = $calc($hget(sbmui,display_w) - 170)
-  var %width = $calc($hget(sbmui,display_w) - 300)
+  var %width = $calc($hget(sbmui,display_w) - 180)
+  ;var %width = $calc($hget(sbmui,display_w) - 300)
   var %lines = $wrap(%text,%font,%fontsize,%width,0,0)
   var %current_line = %lines
 
@@ -474,7 +474,6 @@ alias sbmresizechat {
       dec %visible %lines
     }
 
-    echo -s hinc sbmui display_current %added
     hinc sbmui display_current %added
 
     sbmresizechatthumb
