@@ -404,6 +404,8 @@ alias sbmresizechat {
 
     hadd sbmui display_upper_bound $calc(%line + 1)
 
+    while ($hget(sbmui,display_position) < $hget(sbmui,display_total_visible_lines)) && ($hget(sbmui,display_total_lines) > $hget(sbmui,display_total_visible_lines)) sbmscroll down $true
+
     sbmresizechatthumb
   }
 }

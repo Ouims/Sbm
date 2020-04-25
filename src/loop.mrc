@@ -139,6 +139,7 @@ alias sbmloop {
         if (%line < $hget(sbmui,display_upper_bound)) {
           hinc sbmui display_total_lines $calc(%lines - 1)
           hdec sbmui display_upper_bound
+          hinc sbmui display_position $calc(%lines - 1)
 
           var %resize_thumb = $true
         }
