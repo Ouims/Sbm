@@ -30,7 +30,7 @@ alias sbmloop {
       }
       if (%wh < 400) hadd sbmui menu_h $v1
 
-      if (%wh > 480) && (%ww > 400) {
+      if (%wh > 480) && (%ww > 270) {
         hadd sbmui display_resize $true
         hdel sbmui display_hidden $false
         hdel sbmui up_hidden $false
@@ -47,6 +47,8 @@ alias sbmloop {
         hadd sbmui down_y $calc(%wh - 60)
         hadd sbmui chat_y $calc(%wh - 30)
         hadd sbmui chat_w $calc(%ww - 40)
+
+        hadd sbmui display_total_visible_lines $int($calc((%wh - 440) / 18))
 
         sbmresizechat
       }
@@ -116,12 +118,14 @@ alias sbmloop {
     if (%lines) && (!$hget(sbmui,display_hidden)) {
       var %dy = $hget(sbmui,display_y)
       var %x = 2
-      var %line = $hget(sbmui,display_current_id)
+      var %last_line = $gettok($hget(sbmui,display_last_visible_line),1,32)
+      var %line = %last_line
+      var %wrapped_line = $gettok($hget(sbmui,display_last_visible_line),2,32)
       var %y = $calc(%dy + $hget(sbmui,display_h) - 18)
       var %font = $hget(sbmui,display_font)
       var %fontsize = $hget(sbmui,display_fontsize)
-      var %width = $calc($hget(sbmui,display_w) - 180)
-      ;var %width = $calc($hget(sbmui,display_w) - 300)
+      var %width = $calc($hget(sbmui,display_w) - 175)
+      var %resize_thumb = $false
 
       while (%y > %dy) && (%line) && ($hget(sbmchat,%line)) {
         tokenize 32 $v1
@@ -130,14 +134,33 @@ alias sbmloop {
 
         if ($2 == *) %color = $hget(sbmoptions,colorchatinfos)
 
-        if ($1 != null) drawtext -rnp @sbm %color %font %fontsize %x %y $+($chr(2),$1)
-        if ($2 != null) drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) %y $+($chr(2),$2)
-        drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,1)
+        var %lines = $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,0)
 
-        dec %y 18
+        if (%line < $hget(sbmui,display_upper_bound)) {
+          hinc sbmui display_total_lines $calc(%lines - 1)
+          hdec sbmui display_upper_bound
 
-        %line = $sbmgetchatline(%line).prev
+          var %resize_thumb = $true
+        }
+
+        if (%line == %last_line) %lines = %wrapped_line
+
+        while (%y > %dy) && (%lines) {
+          drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,%lines)
+
+          dec %y 18
+          dec %lines
+        }
+
+        if (%lines == 0) {
+          drawtext -rnp @sbm %color %font %fontsize %x $calc(%y + 18) $+($chr(2),$1)
+          drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) $calc(%y + 18) $+($chr(2),$2)
+        }
+
+        dec %line
       }
+
+      if (%resize_thumb) sbmresizechatthumb
     }
   }
 
