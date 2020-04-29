@@ -188,9 +188,9 @@ alias sbmloop {
     }
 
     if ($hget(sbmui,scroll_to)) {
-      echo -s $v1
-      var %pos = $round($calc(($v1 - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $hget(sbmui,display_total_lines)),0)
-      echo -s %pos - $hget(sbmui,display_position)
+      var %pos = $round($calc(($v1 - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * ($hget(sbmui,display_total_lines) + $hget(sbmui,display_total_visible_lines))),0)
+      ;echo -s %pos - $hget(sbmui,display_position) $hget(sbmui,display_total_lines) $hget(sbmui,display_total_visible_lines)
+
       if (%pos > $hget(sbmui,display_position)) sbmscroll down
       elseif ($v1 < $v2) sbmscroll up
       else hdel sbmui scroll_to
