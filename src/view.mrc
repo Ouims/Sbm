@@ -335,8 +335,6 @@ alias sbmchangeview {
     sbmaddcontrol scroll scroll 785 425 15 115 "segoe ui symbol" 14 static
     sbmaddcontrol elevator down 785 540 15 20 "segoe ui symbol" 14 static $chr(9660)
     sbmaddcontrol edit chat 5 570 760 25 15 15 "segoe ui symbol" 15 static
-
-    hadd sbmui display_current 0
   }
 
   if ($hget(sbm,view) == lobby) {

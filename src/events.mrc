@@ -47,7 +47,14 @@ menu @sbm {
           }
         }
       }
-      elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmchat,0).item) hadd sbmui scroll_to $mouse.y
+      elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmui,display_total_lines)) {
+        var %total = $v1
+        var %visible = $hget(sbmui,display_total_visible_lines)
+        var %line = $round($calc(%visible + (($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * (%total - %visible))),0)
+
+        hadd sbmui display_position %line
+        hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * (%line - %visible))
+      }
     }
   }
   leave: {
@@ -107,7 +114,14 @@ menu @sbm {
         elseif (%in_mouse == select_blue) && (!$hget(sbmui,select_blue_disabled)) sockwrite -n sbmclient slpl 4 1
         elseif (%in_mouse == up) sbmscroll up
         elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_size)) {
-          if (!$inrect($mouse.x,$mouse.y,$hget(sbmui,scroll_x),$calc($hget(sbmui,scroll_y) + $hget(sbmui,scroll_thumb_position)),$hget(sbmui,scroll_w),$v1)) hadd sbmui scroll_to $mouse.y
+          if (!$inrect($mouse.x,$mouse.y,$hget(sbmui,scroll_x),$calc($hget(sbmui,scroll_y) + $hget(sbmui,scroll_thumb_position)),$hget(sbmui,scroll_w),$hget(sbmui,scroll_thumb_size))) {
+            var %total = $hget(sbmui,display_total_lines)
+            var %visible = $hget(sbmui,display_total_visible_lines)
+            var %line = $round($calc(%visible + (($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * (%total - %visible))),0)
+
+            hadd sbmui display_position %line
+            hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * (%line - %visible))
+          }
           hadd sbmui scroll_thumb_active $true
         }
         elseif (%in_mouse == down) sbmscroll down
