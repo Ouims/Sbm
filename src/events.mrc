@@ -15,6 +15,8 @@ on *:close:@sbm: {
 menu @sbm {
   mouse: {
     hadd sbmui mouseInControl $null
+    hadd sbmui mousex $mouse.x
+    hadd sbmui mousey $mouse.y
 
     noop $hfind(sbmui,*_type,0,w,hadd sbmui mouseInControl $iif($sbmcooincontrol($left($1,-5),$mouse.x,$mouse.y),$left($1,-5),$hget(sbmui,mouseInControl)))
 
@@ -45,14 +47,7 @@ menu @sbm {
           }
         }
       }
-      elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmchat,0).item) {
-        /*
-        this has to be changed to a move towards said line instead of directly moving into said position because of the wrapping thing
-
-        hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $v1),0)
-        hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
-        */
-      }
+      elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmchat,0).item) hadd sbmui scroll_to $mouse.y
     }
   }
   leave: {
@@ -112,13 +107,8 @@ menu @sbm {
         elseif (%in_mouse == select_blue) && (!$hget(sbmui,select_blue_disabled)) sockwrite -n sbmclient slpl 4 1
         elseif (%in_mouse == up) sbmscroll up
         elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_size)) {
-          /*
-          this has to be changed to a move towards said line instead of directly moving into said position because of the wrapping thing
-
-          hadd sbmui display_current $round($calc(($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * ($hget(sbmchat,0).item - ($hget(sbmui,display_h) / 18))),0)
-          hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * $hget(sbmui,display_current))
+          hadd sbmui scroll_to $mouse.y
           hadd sbmui scroll_thumb_active $true
-          */
         }
         elseif (%in_mouse == down) sbmscroll down
       }
@@ -126,6 +116,16 @@ menu @sbm {
   }
   uclick: {
     hadd sbmui scroll_thumb_active $false
+    hdel sbmui scroll_to
+
+    if ($hget(sbmui,mouseInControl)) {
+      var %control = $v1
+
+      if ($hget(sbmui,$+(%control,_type)) == chat) {
+        hadd sbmui $+(%control,_sel_start) -1 -1
+        hadd sbmui $+(%control,_sel_end) -1 -1
+      }
+    }
   }
 }
 

@@ -58,7 +58,11 @@ alias sbmaddcontrol {
   if ($10 != $null) hadd sbmui $+($2,_text) $10-
 
   if ($1 == edit) hadd sbmui $+($2,_bg) 8355711
-  elseif ($1 == chat) hadd sbmui $+($2,_total_visible_lines) $int($calc($6 / 18))
+  elseif ($1 == chat) {
+    hadd sbmui $+($2,_total_visible_lines) $int($calc($6 / 18))
+    hadd sbmui $+($2,_sel_start) -1 -1
+    hadd sbmui $+($2,_sel_end) -1 -1
+  }
 }
 
 /**

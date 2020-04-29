@@ -117,7 +117,6 @@ alias sbmloop {
 
     if (%lines) && (!$hget(sbmui,display_hidden)) {
       var %dy = $hget(sbmui,display_y)
-      var %x = 2
       var %last_line = $gettok($hget(sbmui,display_last_visible_line),1,32)
       var %line = %last_line
       var %wrapped_line = $gettok($hget(sbmui,display_last_visible_line),2,32)
@@ -126,6 +125,8 @@ alias sbmloop {
       var %fontsize = $hget(sbmui,display_fontsize)
       var %width = $calc($hget(sbmui,display_w) - 175)
       var %resize_thumb = $false
+
+      var %bg = $hget(sbmoptions,colormainbg)
 
       while (%y > %dy) && (%line) && ($hget(sbmchat,%line)) {
         tokenize 32 $v1
@@ -146,15 +147,37 @@ alias sbmloop {
 
         if (%line == %last_line) %lines = %wrapped_line
 
+        var %in_mouse = $hget(sbmui,mouseInControl)
+        var %check_mouse = $false
+
+        if (%in_mouse == display) && ($mouse.key & 1) %check_mouse = $true
+
         while (%y > %dy) && (%lines) {
-          drawtext -rnp @sbm %color %font %fontsize 170 %y $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,%lines)
+          var %text = $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,%lines)
+
+          if (%check_mouse) && ($inrect($hget(sbmui,mousex),$hget(sbmui,mousey),170,%y,%width,18)) {
+            var %x = $calc($hget(sbmui,mousex) - 170)
+
+            if ($hget(sbmui,display_sel_start) == -1 -1) {
+              if (%x < $width($left($strip(%text),1),$noqt(%font),%fontsize,1,0)) hadd sbmui display_sel_start %line %lines 0
+              else hadd sbmui display_sel_start %line %lines $len($wrap(%text,$noqt(%font),%fontsize,%x,0,1))
+            }
+
+            if (%x > $width($left($strip(%text),1),$noqt(%font),%fontsize,1,0)) hadd sbmui display_sel_end %line %lines $len($wrap(%text,$noqt(%font),%fontsize,%x,0,1))
+
+            if ($hget(sbmui,display_sel_start) != $hget(sbmui,display_sel_end)) && ($v1 != -1 -1) drawrect -rfin @sbm %bg 1 170 %y %x 18
+          }
+
+          drawtext -rnp @sbm %color %font %fontsize 170 $calc(%y + 1) %text
 
           dec %y 18
           dec %lines
         }
 
+        if (%check_mouse) echo -s start: $hget(sbmui,display_sel_start) end: $hget(sbmui,display_sel_end)
+
         if (%lines == 0) {
-          drawtext -rnp @sbm %color %font %fontsize %x $calc(%y + 18) $+($chr(2),$1)
+          drawtext -rnp @sbm %color %font %fontsize 2 $calc(%y + 18) $+($chr(2),$1)
           drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) $calc(%y + 18) $+($chr(2),$2)
         }
 
@@ -163,6 +186,15 @@ alias sbmloop {
 
       if (%resize_thumb) sbmresizechatthumb
     }
+
+    if ($hget(sbmui,scroll_to)) {
+      echo -s $v1
+      var %pos = $round($calc(($v1 - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * $hget(sbmui,display_total_lines)),0)
+      echo -s %pos - $hget(sbmui,display_position)
+      if (%pos > $hget(sbmui,display_position)) sbmscroll down
+      elseif ($v1 < $v2) sbmscroll up
+      else hdel sbmui scroll_to
+    } 
   }
 
   noop $hfind(sbmui,*_type,0,w,sbmdrawcontrol $left($1,-5))
@@ -198,6 +230,8 @@ alias sbmloop {
       hadd sbm ticksbonus $ticks
     }
   }
+
+  hinc sbm fpscount
 
   if ($calc($ticks - $hget(sbm,fpsticks)) >= 1000) {
     hadd sbm fps $hget(sbm,fpscount)
