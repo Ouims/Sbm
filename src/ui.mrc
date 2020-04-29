@@ -310,13 +310,13 @@ alias sbmscroll {
 
   var %line = $1
   var %line_wrapped = $2
-  var %lines = $wrap($+($chr(2),$gettok($hget(sbmchat,%line),3-,32)),%font,%fontsize,%width,1,0)
+  var %lines = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
 
   if (%direction == down) && ($hget(sbmui,display_position) < $hget(sbmui,display_total_lines)) {
-    if (%line_wrapped == %lines) {
+    if (%line_wrapped == %lines) || (%line == 0) {
       inc %line
 
-      %lines = $wrap($+($chr(2),$gettok($hget(sbmchat,%line),3-,32)),%font,%fontsize,%width,1,0)
+      %lines = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
 
       %line_wrapped = 0
     }
@@ -344,7 +344,7 @@ alias sbmscroll {
     if (%line_wrapped == 1) {
       dec %line
 
-      %lines = $wrap($+($chr(2),$gettok($hget(sbmchat,%line),3-,32)),%font,%fontsize,%width,1,0)
+      %lines = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
 
       %line_wrapped = $calc(%lines + 1)
     }
@@ -394,10 +394,10 @@ alias sbmresizechat {
     hadd sbmui display_lower_bound %line
     hadd sbmui display_position %line
 
-    hadd sbmui display_last_visible_line %line $wrap($+($chr(2),$gettok($hget(sbmchat,%line),3-,32)),%font,%fontsize,%width,1,0)
+    hadd sbmui display_last_visible_line %line $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
 
     while (%visible > 0) && (%line > 0) {
-      var %lines = $wrap($+($chr(2),$gettok($hget(sbmchat,%line),3-,32)),%font,%fontsize,%width,1,0)
+      var %lines = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
 
       hinc sbmui display_total_lines $calc(%lines - 1)
       hinc sbmui display_position $calc(%lines - 1)

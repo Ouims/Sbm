@@ -135,7 +135,7 @@ alias sbmloop {
 
         if ($2 == *) %color = $hget(sbmoptions,colorchatinfos)
 
-        var %lines = $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,0)
+        var %lines = $wrap($3-,$noqt(%font),%fontsize,%width,1,0)
 
         if (%line < $hget(sbmui,display_upper_bound)) {
           hinc sbmui display_total_lines $calc(%lines - 1)
@@ -153,7 +153,7 @@ alias sbmloop {
         if (%in_mouse == display) && ($mouse.key & 1) %check_mouse = $true
 
         while (%y > %dy) && (%lines) {
-          var %text = $wrap($+($chr(2),$3-),$noqt(%font),%fontsize,%width,1,%lines)
+          var %text = $wrap($3-,$noqt(%font),%fontsize,%width,1,%lines)
 
           if (%check_mouse) && ($inrect($hget(sbmui,mousex),$hget(sbmui,mousey),170,%y,%width,18)) {
             var %x = $calc($hget(sbmui,mousex) - 170)
@@ -168,17 +168,15 @@ alias sbmloop {
             if ($hget(sbmui,display_sel_start) != $hget(sbmui,display_sel_end)) && ($v1 != -1 -1) drawrect -rfin @sbm %bg 1 170 %y %x 18
           }
 
-          drawtext -rnp @sbm %color %font %fontsize 170 $calc(%y + 1) %text
+          drawtext -porn @sbm %color %font %fontsize 170 $calc(%y + 1) %text
 
           dec %y 18
           dec %lines
         }
 
-        if (%check_mouse) echo -s start: $hget(sbmui,display_sel_start) end: $hget(sbmui,display_sel_end)
-
         if (%lines == 0) {
-          drawtext -rnp @sbm %color %font %fontsize 2 $calc(%y + 18) $+($chr(2),$1)
-          drawtext -rnp @sbm %color %font %fontsize $calc(160 - $width($+($chr(2),$2),%font,%fontsize)) $calc(%y + 18) $+($chr(2),$2)
+          drawtext -porn @sbm %color %font %fontsize 2 $calc(%y + 18) $1
+          drawtext -porn @sbm %color %font %fontsize $calc(160 - $width($2,%font,%fontsize)) $calc(%y + 18) $2
         }
 
         dec %line
