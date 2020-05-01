@@ -118,11 +118,15 @@ menu @sbm {
             var %total = $hget(sbmui,display_total_lines)
             var %visible = $hget(sbmui,display_total_visible_lines)
             var %line = $round($calc(%visible + (($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * (%total - %visible))),0)
+            var %position = $hget(sbmui,display_position)
+
+            if (%line > %position)  %line = $sbmmin($calc(%position + %visible),%total)
+            else %line = $sbmmax($calc(%position - %visible), %visible)
 
             hadd sbmui display_position %line
             hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * (%line - %visible))
           }
-          hadd sbmui scroll_thumb_active $true
+          else hadd sbmui scroll_thumb_active $true
         }
         elseif (%in_mouse == down) sbmscroll down
       }
