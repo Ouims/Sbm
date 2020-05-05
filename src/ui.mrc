@@ -60,8 +60,8 @@ alias sbmaddcontrol {
   if ($1 == edit) hadd sbmui $+($2,_bg) 8355711
   elseif ($1 == chat) {
     hadd sbmui $+($2,_total_visible_lines) $int($calc($6 / 18))
-    hadd sbmui $+($2,_sel_start) -1 -1
-    hadd sbmui $+($2,_sel_end) -1 -1
+    hadd sbmui $+($2,_sel_start) -1 -1 -1
+    hadd sbmui $+($2,_sel_end) -1 -1 -1
   }
 }
 
@@ -417,22 +417,59 @@ alias sbmresizechatthumb {
 */
 alias sbmdrawchatline {
   var %line = $gettok($1,1,95)
-  var %line_line = $gettok($1,2,95)
+  var %wrap = $gettok($1,2,95)
   var %y = $calc($hget(sbmui,display_draw_y) + 1)
-  var %font = $hget(sbmui,display_font)
+  var %font = $noqt($hget(sbmui,display_font))
   var %fontsize = $hget(sbmui,display_fontsize)
   var %width = $calc($hget(sbmui,display_w) - 175)
   var %color = 0
 
   tokenize 32 $hget(sbmchat,%line)
 
+  var -p %text = $wrap($3-,%font,%fontsize,%width,1,%wrap)
+
   if ($2 == *) %color = $hget(sbmoptions,colorchatinfos)
 
-  drawtext -porn @sbm %color %font %fontsize 170 %y $wrap($3-,$noqt(%font),%fontsize,%width,1,%line_line)
+  if ($hget(sbmui,display_sel_start) != $hget(sbmui,display_sel_end)) {
+    var %current = $+(%line,.,%wrap)
+    var %start = $+($gettok($v1,1,32),.,$gettok($v1,2,32))
+    var %end = $+($gettok($v2,1,32),.,$gettok($v2,2,32))
+    var %start_char = $gettok($v1,3,32)
+    var %end_char = $gettok($v2,3,32)
 
-  if (%line_line == 1) {
-    drawtext -porn @sbm %color %font %fontsize 2 %y $1
-    drawtext -porn @sbm %color %font %fontsize $calc(160 - $width($2,%font,%fontsize)) %y $2
+    if (%current isnum $+(%start,-,%end)) {
+      var %x1 = 0
+      var %x2 = $width(%text,%font,%fontsize,1,1)
+
+      if (%current == %start) && (%current == %end) {
+        if (%start_char > %end_char) {
+          var %temp_char = %end_char
+
+          %end_char = %start_char
+          %start_char = %temp_char
+        }
+
+        %x1 = $width($left(%text,%start_char),%font,%fontsize,1,1)
+        %x2 = $width($left(%text,%end_char),%font,%fontsize,1,1)
+      }
+      elseif (%current == %start) {
+        if (%start > %end) %x2 = $width($left(%text,%start_char),%font,%fontsize,1,1)
+        elseif (%start < %end) %x1 = $width($left(%text,%start_char),%font,%fontsize,1,1)
+      }
+      elseif (%current == %end) {
+        if (%end > %start) %x2 = $width($left(%text,%end_char),%font,%fontsize,1,1)
+        elseif (%end < %start) %x1 = $width($left(%text,%end_char),%font,%fontsize,1,1)
+      }
+
+      if (%x2) drawrect -rfn @sbm $rgb(255,255,255) 1 $calc(170 + %x1) %y $calc(%x2 - %x1) 17
+    }
+  }
+
+  drawtext -porn @sbm %color $qt(%font) %fontsize 170 %y %text
+
+  if (%wrap == 1) {
+    drawtext -porn @sbm %color $qt(%font) %fontsize 2 %y $1
+    drawtext -porn @sbm %color $qt(%font) %fontsize $calc(160 - $width($2,%font,%fontsize)) %y $2
   }
 
   hinc sbmui display_draw_y 18

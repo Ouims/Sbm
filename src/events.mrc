@@ -30,15 +30,14 @@ menu @sbm {
 
         if ($mouse.x <= %c) {
           var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $left($hget(sbmui,$+(%focus,_text)),%p)
-          while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc(%c - $mouse.x)) {
-            inc %a
-          }
+          while (%a <= $len(%t)) && ($width($right(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc(%c - $mouse.x)) inc %a
+
           if (%a != 1) {
             hadd sbmui $+(%focus,_sel) $calc(%p - %a + 1) %p
           }
         }
         else {
-          var %a 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
+          var %a = 1,%p $hget(sbmui,$+(%focus,_cursor)),%t $mid($hget(sbmui,$+(%focus,_text)),%p)
           while (%a <= $len(%t)) && ($width($left(%t,%a),$hget(sbmui,$+(%focus,_font)),$hget(sbmui,$+(%focus,_fontsize))) <= $calc($mouse.x - %c)) {
             inc %a
           }
@@ -46,6 +45,33 @@ menu @sbm {
             hadd sbmui $+(%focus,_sel) %p $calc(%p + %a -1)
           }
         }
+      }
+      elseif (%in_mouse == display) {
+        if ($mouse.y <= $calc($hget(sbmui,display_y) + 4)) sbmscroll up
+        elseif ($v1 >= $calc($v2 + $hget(sbmui,display_h) - 8)) sbmscroll down
+
+        if ($int($calc(($mouse.y - $hget(sbmui,display_y)) / 18 + ($hget(sbmui,display_position) - $hget(sbmui,display_total_visible_lines)))) > 0) {
+          var %line_in_position = $gettok($hget(sbmui,display_lines_positions),$v1,32)
+          var %line = $gettok(%line_in_position,1,95)
+          var %wrapped = $gettok(%line_in_position,2,95)
+
+          if ($mouse.x == 170) hadd sbmui display_sel_end %line %wrapped 0
+          else {
+            var %font = $noqt($hget(sbmui,display_font))
+            var %fontsize = $hget(sbmui,display_fontsize)
+            var %width = $calc($hget(sbmui,display_w) - 175)
+            var -p %text = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,%wrapped)
+
+            if ($calc($mouse.x - 170) >= %width) hadd sbmui display_sel_end %line %wrapped $len(%text)
+            else {
+              var %a = 1
+              while (%a <= $len(%text)) && ($width($left(%text,%a),%font,%fontsize,1,1) <= $calc($mouse.x - 170)) inc %a
+
+              hadd sbmui display_sel_end %line %wrapped $calc(%a - 1)
+            }
+          }
+        }
+        else hadd sbmui display_sel_end 1 1 0
       }
       elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_active)) && ($hget(sbmui,display_total_lines)) {
         var %total = $v1
@@ -78,10 +104,8 @@ menu @sbm {
           if ($mouse.x <= $calc(%x + 10)) hadd sbmui $+(%in_mouse,_cursor) 0
           elseif ($v1 > $calc(%x + 10 + $width(%t,$hget(sbmui,$+(%in_mouse,_font)),$hget(sbmui,$+(%in_mouse,_fontsize))))) hadd sbmui $+(%in_mouse,_cursor) $len(%t)
           else {
-            var %a 1
-            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%in_mouse,_font)),$hget(sbmui,$+(%in_mouse,_fontsize)))) <= $mouse.x) {
-              inc %a
-            }
+            var %a = 1
+            while (%a <= $len(%t)) && ($calc(%x + 10 + $width($left(%t,%a),$hget(sbmui,$+(%in_mouse,_font)),$hget(sbmui,$+(%in_mouse,_fontsize)))) <= $mouse.x) inc %a
 
             hadd sbmui $+(%in_mouse,_cursor) $calc(%a - 1)
           }
@@ -112,6 +136,40 @@ menu @sbm {
         elseif (%in_mouse == select_black) && (!$hget(sbmui,select_black_disabled)) sockwrite -n sbmclient slpl 2 1
         elseif (%in_mouse == select_orange) && (!$hget(sbmui,select_orange_disabled)) sockwrite -n sbmclient slpl 3 1
         elseif (%in_mouse == select_blue) && (!$hget(sbmui,select_blue_disabled)) sockwrite -n sbmclient slpl 4 1
+        elseif (%in_mouse == display) {
+          if ($int($calc(($mouse.y - $hget(sbmui,display_y)) / 18 + ($hget(sbmui,display_position) - $hget(sbmui,display_total_visible_lines)))) > 0) {
+            var %line_in_position = $gettok($hget(sbmui,display_lines_positions),$v1,32)
+            var %line = $gettok(%line_in_position,1,95)
+            var %wrapped = $gettok(%line_in_position,2,95)
+
+            if ($mouse.x == 170) {
+              hadd sbmui display_sel_start %line %wrapped 0
+              hadd sbmui display_sel_end %line %wrapped 0
+            }
+            else {
+              var %font = $noqt($hget(sbmui,display_font))
+              var %fontsize = $hget(sbmui,display_fontsize)
+              var %width = $calc($hget(sbmui,display_w) - 175)
+              var -p %text = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,%wrapped)
+
+              if ($calc($mouse.x - 170) >= %width) {
+                hadd sbmui display_sel_start %line %wrapped $len(%text)
+                hadd sbmui display_sel_end %line %wrapped $len(%text)
+              }
+              else {
+                var %a = 1
+                while (%a <= $len(%text)) && ($width($left(%text,%a),%font,%fontsize,1,1) <= $calc($mouse.x - 170)) inc %a
+
+                hadd sbmui display_sel_start %line %wrapped $calc(%a - 1)
+                hadd sbmui display_sel_end %line %wrapped $calc(%a - 1)
+              }
+            }
+          }
+          else {
+            hadd sbmui display_sel_start -1 -1 -1
+            hadd sbmui display_sel_end -1 -1 -1
+          }
+        }
         elseif (%in_mouse == up) sbmscroll up
         elseif (%in_mouse == scroll) && ($hget(sbmui,scroll_thumb_size)) {
           if (!$inrect($mouse.x,$mouse.y,$hget(sbmui,scroll_x),$calc($hget(sbmui,scroll_y) + $hget(sbmui,scroll_thumb_position)),$hget(sbmui,scroll_w),$hget(sbmui,scroll_thumb_size))) {
@@ -134,16 +192,6 @@ menu @sbm {
   }
   uclick: {
     hadd sbmui scroll_thumb_active $false
-    hdel sbmui scroll_to
-
-    if ($hget(sbmui,mouseInControl)) {
-      var %control = $v1
-
-      if ($hget(sbmui,$+(%control,_type)) == chat) {
-        hadd sbmui $+(%control,_sel_start) -1 -1
-        hadd sbmui $+(%control,_sel_end) -1 -1
-      }
-    }
   }
 }
 
@@ -201,7 +249,7 @@ on *:keydown:@sbm:*: {
       }
     }
     ;control+v
-    elseif ($keyval == 22) || (($mouse.key & 2) && ($keyval == 86)) {
+    elseif ($mouse.key & 2) && ($keyval == 86) {
       if ($crlf !isin $cb) {
         if ($hget(sbmui,$+(%focus,_sel))) {
           tokenize 32 $v1
@@ -344,7 +392,7 @@ on *:keydown:@sbm:*: {
       }      
     }
     ;ctrl A
-    elseif ($keyval == 1) {
+    elseif ($mouse.key & 2) && ($keyval == 65) {
       if ($hget(sbmui,$+(%focus,_text)) != $null) {
         hadd sbmui $+(%focus,_sel) 0 $len($v1)
         hadd sbmui $+(%focus,_cursor) $len($v1)
@@ -498,7 +546,7 @@ on *:keydown:@sbm:*: {
 
     }
     ;control+x
-    elseif ($keyval == 24) {
+    elseif ($mouse.key & 2) && ($keyval == 88) {
       if ($hget(sbmui,$+(%focus,_sel))) {
         tokenize 32 $v1
         clipboard $mid(%t,$calc($1 + 1),$calc($2 - $1))
@@ -510,7 +558,7 @@ on *:keydown:@sbm:*: {
       }
     }
     ;control+c
-    elseif ($keyval == 3) {
+    elseif ($mouse.key & 2) && ($keyval == 67) {
       if ($hget(sbmui,$+(%focus,_sel))) {
         tokenize 32 $v1
         clipboard $mid(%t,$calc($1 + 1),$calc($2 - $1))
