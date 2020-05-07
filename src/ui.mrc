@@ -328,6 +328,8 @@ alias sbmscroll {
 *
 * @command /sbmresizechat
 *
+* @param <width>  the previous width of the chat display.
+*
 * @global
 *
 */
@@ -344,20 +346,82 @@ alias sbmresizechat {
     var %width = $calc($hget(sbmui,display_w) - 175)
     var %line = 1
     var %position = $hget(sbmui,display_position)
+    var %start_sel = $hget(sbmui,display_sel_start)
+    var %end_sel = $hget(sbmui,display_sel_end)
+    var %start_line = $gettok(%start_sel,1,32)
+    var %start_char = $gettok(%start_sel,3,32)
+    var %end_line = $gettok(%end_sel,1,32)
+    var %end_char = $gettok(%end_sel,3,32)
+    var %check_sel = $false
+
+    if (%start_sel != %end_sel) {
+      var %start_wrap = $gettok(%start_sel,2,32)
+      var %end_wrap = $gettok(%end_sel,2,32)
+      var %old_width = $calc($1 - 175)
+
+      dec %start_wrap
+
+      var -p %text = $gettok($hget(sbmchat,%start_line),3-,32)
+
+      while (%start_wrap) {
+        inc %start_char $len($wrap(%text,%font,%fontsize,%old_width,1,%start_wrap))
+
+        dec %start_wrap
+      }
+
+      dec %end_wrap
+
+      var -p %text = $gettok($hget(sbmchat,%end_line),3-,32)
+
+      while (%end_wrap) {
+        inc %end_char $len($wrap(%text,%font,%fontsize,%old_width,1,%end_wrap))
+
+        dec %end_wrap
+      }
+
+      %check_sel = $true
+    }
+    else {
+      hadd sbmui display_sel_start -1 -1 -1
+      hadd sbmui display_sel_end -1 -1 -1
+    }
 
     while (%line <= %real_lines) {
-      var %line_lines = $wrap($gettok($hget(sbmchat,%line),3-,32),%font,%fontsize,%width,1,0)
-      var %line_line = 1
+      var -p %text = $gettok($hget(sbmchat,%line),3-,32)
+      var %line_wraps = $wrap(%text,%font,%fontsize,%width,1,0)
+      var %line_wrap = 1
 
-      while (%line_line <= %line_lines) {
-        hadd sbmui display_lines_positions $hget(sbmui,display_lines_positions) $+(%line,_,%line_line)
+      while (%line_wrap <= %line_wraps) {
+        hadd sbmui display_lines_positions $hget(sbmui,display_lines_positions) $+(%line,_,%line_wrap)
 
-        inc %line_line
+        if (%check_sel) && (%line == %start_line) && (%start_char >= 0) {
+          var %line_chars = $len($wrap(%text,%font,%fontsize,%width,1,%line_wrap))
+
+          if (%line_chars < %start_char) dec %start_char %line_chars
+          else {
+            hadd sbmui display_sel_start %line %line_wrap %start_char
+
+            %start_char = -1
+          }
+        }
+
+        if (%check_sel) && (%line == %end_line) && (%end_char >= 0) {
+          var %line_chars = $len($wrap(%text,%font,%fontsize,%width,1,%line_wrap))
+
+          if (%line_chars < %end_char) dec %end_char %line_chars
+          else {
+            hadd sbmui display_sel_end %line %line_wrap %end_char
+
+            %end_char = -1
+          }
+        }
+
+        inc %line_wrap
       }
 
       if (%line == %position) hadd sbmui display_position $numtok($hget(sbmui,display_lines_positions),32)
 
-      hinc sbmui display_total_lines %line_lines
+      hinc sbmui display_total_lines %line_wraps
 
       inc %line
     }

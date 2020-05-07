@@ -37,6 +37,8 @@ alias sbmloop {
         hdel sbmui down_hidden $false
         hdel sbmui chat_hidden $false
 
+        var %display_w = $hget(sbmui,display_w)
+
         hadd sbmui display_w $calc(%ww - 15)
         hadd sbmui display_h $calc(%wh - 440)
         hadd sbmui up_x $calc(%ww - 15)
@@ -49,7 +51,7 @@ alias sbmloop {
 
         hadd sbmui display_total_visible_lines $int($calc((%wh - 440) / 18))
 
-        sbmresizechat
+        sbmresizechat %display_w
       }
       else {
         hadd sbmui display_hidden $true
