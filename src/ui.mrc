@@ -115,7 +115,7 @@ alias sbmdrawcontrol {
         var %oh = $hget(sbmui,$+($1,_oh))
         var %osize = $hget(sbmui,$+($1,_osize))
 
-        var %scale = $calc(1 / $sbmmax($calc(%oww / %ww),$calc(%owh / %wh)))
+        var %scale = $calc(1 / $max($calc(%oww / %ww),$calc(%owh / %wh)))
 
         if (%style == relative) {          
           %x = $calc((%ox / %oww) * %ww + %wx)

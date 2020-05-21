@@ -35,44 +35,6 @@ alias sbmgetparams {
 
 /**
 *
-* Compares two numbers.
-*
-* @identifier $sbmmax
-*
-* @param <number>  first number to compare
-* @param <number>  second number to compare
-*
-* @returns  the biggest number
-*
-* @global
-*
-*/
-alias sbmmax {
-  if ($1 > $2) return $1
-  return $2
-}
-
-/**
-*
-* Compares two numbers.
-*
-* @identifier $sbmmin
-*
-* @param <number>  first number to compare
-* @param <number>  second number to compare
-*
-* @returns  the smallest number
-*
-* @global
-*
-*/
-alias sbmmin {
-  if ($1 < $2) return $1
-  return $2
-}
-
-/**
-*
 * Align helper.
 *
 * @identifier $sbmalign

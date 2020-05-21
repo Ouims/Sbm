@@ -178,8 +178,8 @@ menu @sbm {
             var %line = $round($calc(%visible + (($mouse.y - $hget(sbmui,scroll_y)) / $hget(sbmui,scroll_h) * (%total - %visible))),0)
             var %position = $hget(sbmui,display_position)
 
-            if (%line > %position)  %line = $sbmmin($calc(%position + %visible),%total)
-            else %line = $sbmmax($calc(%position - %visible), %visible)
+            if (%line > %position)  %line = $min($calc(%position + %visible),%total)
+            else %line = $max($calc(%position - %visible), %visible)
 
             hadd sbmui display_position %line
             hadd sbmui scroll_thumb_position $calc($hget(sbmui,scroll_thumb_jump) * (%line - %visible))

@@ -117,7 +117,7 @@ alias sbmloop {
       if ($hget(sbmchat,0).item) && (!$hget(sbmui,display_hidden)) {
         var %position = $hget(sbmui,display_position)
         var %visible = $hget(sbmui,display_total_visible_lines)
-        var %visible_to_position = $sbmmax($calc(%position - %visible + 1),1)
+        var %visible_to_position = $max($calc(%position - %visible + 1),1)
 
         hadd sbmui display_draw_y $calc($hget(sbmui,display_y) + $hget(sbmui,display_h) - ((%position - %visible_to_position + 1) * 18))
 
